@@ -1,0 +1,113 @@
+// Delta Phi Plots - Z. Miller July 21, 2015
+//
+// .L pl_delPhiAll.C
+// delPhiAll("FILENAME") # Without .root Extension
+
+void delPhiAll(const char* FileName="test")
+{
+  // Set Style parameters for this macro
+  gStyle->SetOptTitle(1); // Show Title (off by default for cleanliness)
+
+  
+  // Open ROOT File
+  char name[1000];
+  sprintf(name,"/Users/zach/Research/rootFiles/july2015/%s.root",FileName);
+  TFile *f = new TFile(name,"READ");
+  if (f->IsOpen()==kFALSE)
+    { std::cout << "!!! File Not Found !!!" << std::endl;
+      exit(1); }
+  // f->ls(); // - DEBUG by printing all objects in ROOT file
+  
+ 
+  TH1F * LSIM[20];
+  TH1F * USIM[20];
+  TH1F * INCL[20];
+  TCanvas * c[4];
+  TCanvas * IN[4];
+  
+  for(Int_t trig = 0; trig < 4; trig++){
+    // Create and Segment Canvas
+    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists",0,0,900,500);
+    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists",0,0,900,500);
+    c[trig] -> Divide(3,2);
+    IN[trig]-> Divide(3,2);
+    c[trig] -> Update();
+    IN[trig]-> Update();
+    
+    for(Int_t ptbin = 0; ptbin < 5; ptbin++){
+
+      Int_t counter = 5*trig+ptbin;
+      c[trig]->cd(ptbin+1);
+      
+      // Grab Histograms for manipulation (can draw without Get, must Get for manip)
+      LSIM[counter] = (TH1F*)f->Get(Form("projDelPhiPhotLS_%i_%i",ptbin,trig)); // Like Sign Delta Phi (Photonic Electrons)
+      USIM[counter] = (TH1F*)f->Get(Form("projDelPhiPhotUS_%i_%i",ptbin,trig)); // Unlike Sign Delta Phi (Photonic Electrons)
+      INCL[counter] = (TH1F*)f->Get(Form("projDelPhiIncl_%i_%i",ptbin,trig));   // Inclusive Delta Phi eh
+      
+      // Actually manipulate histos and plot
+      
+      USIM[counter]->SetLineColor(kRed);
+      USIM[counter]->SetLineWidth(1);
+      USIM[counter]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      USIM[counter]->GetXaxis()->SetRangeUser(0,4);
+      if(ptbin == 0)
+	USIM[counter]->SetTitle("Photonic Electron Reconstruction");
+      else if (ptbin == 1 && trig !=3)
+	USIM[counter]->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	USIM[counter]->SetTitle("MB");
+      else
+	USIM[counter]->SetTitle("");
+      USIM[counter]->Draw("hist");
+      
+      LSIM[counter]->SetLineColor(kBlack);
+      LSIM[counter]->SetLineWidth(1);
+      LSIM[counter]->Draw("hist same");
+
+      // Subtraction of (US-LS)
+      TH1F *SUB = (TH1F*)USIM[counter]->Clone(); //
+      SUB->SetName("Subtraction");      // Create SUB as a clone of USIM
+      SUB->Add(LSIM[counter],-1);
+      SUB->SetLineColor(kBlue);
+      SUB->SetLineWidth(1);
+      SUB->SetFillStyle(3001);
+      SUB->SetFillColor(kBlue);
+      SUB->Draw("hist same");
+      
+      
+      TLegend* leg = new TLegend(0.7,0.7,0.85,0.85);
+      leg->AddEntry(USIM[counter],"Unlike Sign","l");
+      leg->AddEntry(LSIM[counter],"Like Sign", "l");
+      leg->AddEntry(SUB,"Unlike - Like", "f");
+      leg->Draw();
+  
+      c[trig]->Update();
+
+      // Handle Inclusive Hists
+      IN[trig]->cd(ptbin+1);
+      INCL[counter]->SetLineColor(kBlue);
+      INCL[counter]->SetLineWidth(1);
+      INCL[counter]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      INCL[counter]->GetXaxis()->SetRangeUser(0,4);
+      if(ptbin == 0)
+	INCL[counter]->SetTitle("Semi-Inclusive Electrons");
+      else if (ptbin == 1 && trig !=3)
+	INCL[counter]->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	INCL[counter]->SetTitle("MB");
+      else
+	INCL[counter]->SetTitle("");
+      INCL[counter]->Draw("hist");
+
+      IN[trig]->Update();
+    }
+  }
+      
+  // Close ROOT File
+  //f->Close();
+  //delete f;
+  
+  // Make PDF if Desired
+  //c1->Print("c1.pdf","pdf");
+}
+

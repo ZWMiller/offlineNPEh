@@ -368,10 +368,59 @@ void offline(const char* FileName="test")
   }
 
   // Make PDF with output canvases
+  //Set front page
+  TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
+  fp->cd();
+  TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
+  bLabel->SetFillColor(kBlack);
+  bLabel->Draw();
+  TLatex tl;
+  tl.SetNDC();
+  tl.SetTextColor(kWhite);
+  tl.SetTextSize(0.033);
+  char tlName[100];
+  char tlName2[100];
+  
+  TString titlename = FileName;
+  int found = titlename.Last('/');
+  if(found >= 0){
+    titlename.Replace(0, found+1, "");
+  } 
+  sprintf(tlName, "RUN 12 pp 200 GeV NPE-h    #Delta#phi Analysis");
+  tl.SetTextSize(0.05);
+  tl.SetTextColor(kWhite);
+  tl.DrawLatex(0.05, 0.92,tlName);
+  
+  TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
+  bFoot->SetFillColor(kBlack);
+  bFoot->Draw();
+  tl.SetTextColor(kWhite);
+  tl.SetTextSize(0.05);
+  tl.DrawLatex(0.05, 0.05, (new TDatime())->AsString());
+  tl.SetTextColor(kBlack);
+  tl.SetTextSize(0.03);
+  tl.DrawLatex(0.1, 0.14, titlename);
+  sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
+  tl.DrawLatex(0.1, 0.8,tlName);
+  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;  #left|#eta#right| < 0.7");
+  tl.DrawLatex(0.1, 0.75,tlName);
+  sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d #phi#right| < 0.015;");
+  tl.DrawLatex(0.1, 0.7,tlName);
+  sprintf(tlName,"hID: pT > 0.2;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 0.1 cm;");
+  tl.DrawLatex(0.1, 0.6,tlName);
+  sprintf(tlName,"       !( -1 < n  #sigma_{e TPC} < 3);");
+  tl.DrawLatex(0.1, 0.55,tlName);
+  sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;  #left|V_{z}-V_{z-VPD}#right| < 6 cm;");
+  tl.DrawLatex(0.1, 0.45,tlName);
+        
+  
+  // Place canvases in order
   TCanvas* temp = new TCanvas();
   sprintf(name, "%s.pdf[", FileName);
   temp->Print(name);
-    sprintf(name, "%s.pdf", FileName);
+  sprintf(name, "%s.pdf", FileName);
+  temp = fp; // print front page
+  temp->Print(name);
   for(Int_t ii=0; ii<numTrigs; ii++)
     {
       if(!fPaintAll && (ii==1 || ii==3))

@@ -402,9 +402,9 @@ void offline(const char* FileName="test")
   tl.DrawLatex(0.1, 0.14, titlename);
   sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
   tl.DrawLatex(0.1, 0.8,tlName);
-  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;  #left|#eta#right| < 0.7");
+  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7");
   tl.DrawLatex(0.1, 0.75,tlName);
-  sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d #phi#right| < 0.015;");
+  sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
   tl.DrawLatex(0.1, 0.7,tlName);
   sprintf(tlName,"hID: pT > 0.2;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 0.1 cm;");
   tl.DrawLatex(0.1, 0.6,tlName);

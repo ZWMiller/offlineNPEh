@@ -5,8 +5,7 @@
 
 void offline(const char* FileName="test")
 {
-  gROOT->SetBatch(kTRUE); // sets batch mode, so don't draw canvas
-  
+   
   // Set Style parameters for this macro
   gStyle->SetOptTitle(1); // Show Title (off by default for cleanliness)
   Bool_t fPaintAll = kFALSE;
@@ -23,6 +22,24 @@ void offline(const char* FileName="test")
     }
     else
       number = 0;
+  }
+  // sets batch mode, so don't draw canvas
+  number = 2;
+  while(number > 1 || number < 0){
+    std::cout << "Batch Mode? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ) {
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	gROOT->SetBatch(kFALSE);
+    }
+    else
+      {
+	number = 0;
+	gROOT->SetBatch(kTRUE);}
+			       
   }
   
   // Open ROOT File
@@ -143,7 +160,7 @@ void offline(const char* FileName="test")
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
       c[trig]->cd(ptbin+1);
-      
+      // Assign to a single, simpler name for manip
       LSIM[ptbin][trig]  = projDelPhiPhotLS[ptbin][trig];
       USIM[ptbin][trig]  = projDelPhiPhotUS[ptbin][trig];
       INCL[ptbin][trig]  = projDelPhiIncl[ptbin][trig];
@@ -152,6 +169,13 @@ void offline(const char* FileName="test")
       USIM2[ptbin][trig] = projDelPhiPhotUSWt[ptbin][trig];
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
+      // Rebin all as necessary
+      LSIM[ptbin][trig]  -> Rebin(4);
+      USIM[ptbin][trig]  -> Rebin(4);
+      INCL[ptbin][trig]  -> Rebin(4);
+      INCL2[ptbin][trig] -> Rebin(4);
+      LSIM2[ptbin][trig] -> Rebin(4);
+      USIM2[ptbin][trig] -> Rebin(4);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -182,7 +206,7 @@ void offline(const char* FileName="test")
       SUB->SetFillStyle(3001);
       SUB->SetFillColor(kBlue);
       SUB->Draw("hist same");
-      TLegend* leg = new TLegend(0.7,0.7,0.85,0.85);
+      TLegend* leg = new TLegend(0.55,0.65,0.8,0.75);
       leg->AddEntry(USIM[ptbin][trig],"Unlike Sign","l");
       leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "l");
       leg->AddEntry(SUB,"Unlike - Like", "f");
@@ -196,7 +220,7 @@ void offline(const char* FileName="test")
       if(ptbin == 0)
 	USIM2[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (Weighted)");
       else if (ptbin == 1 && trig !=3)
-	USIM[ptbin][trig]->SetTitle(Form("HT%i",trig));
+	USIM2[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
 	USIM2[ptbin][trig]->SetTitle("MB");
       else
@@ -216,7 +240,7 @@ void offline(const char* FileName="test")
       SUB5->SetFillStyle(3001);
       SUB5->SetFillColor(kBlue);
       SUB5->Draw("hist same");
-      TLegend* leg3 = new TLegend(0.7,0.7,0.85,0.85);
+      TLegend* leg3 = new TLegend(0.55,0.65,0.8,0.75);
       leg3->AddEntry(USIM2[ptbin][trig],"Unlike Sign","l");
       leg3->AddEntry(LSIM2[ptbin][trig],"Like Sign", "l");
       leg3->AddEntry(SUB5,"Unlike - Like", "f");
@@ -251,7 +275,7 @@ void offline(const char* FileName="test")
       SUB4->SetFillStyle(3001);
       SUB4->SetFillColor(kBlue);
       SUB4->Draw("hist same");
-      TLegend* leg2 = new TLegend(0.7,0.7,0.85,0.85);
+      TLegend* leg2 = new TLegend(0.55,0.65,0.8,0.75);
       leg2->AddEntry(USMM[ptbin][trig],"Unlike Sign","l");
       leg2->AddEntry(LSMM[ptbin][trig],"Like Sign", "l");
       leg2->AddEntry(SUB4,"Unlike - Like", "f");
@@ -355,14 +379,24 @@ void offline(const char* FileName="test")
     for(Int_t ptbin=0; ptbin<numHPtBins; ptbin++)
       {
 	// - Make projections into electron ptbins
-	projZDCx[ptbin][trig] = profileZDCx[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),profileZDCx[trig]->GetYaxis()->FindBin(lowhpt[ptbin]),profileZDCx[trig]->GetYaxis()->FindBin(highhpt[ptbin]));
+	projZDCx[ptbin][trig] = profileZDCx[trig]->ProjectionX(Form("projZDCx_%i_%i",ptbin,trig),profileZDCx[trig]->GetYaxis()->FindBin(lowhpt[ptbin]),profileZDCx[trig]->GetYaxis()->FindBin(highhpt[ptbin]));
 
 	// plot projections
 	pile[trig]->cd(ptbin+1);
 	projZDCx[ptbin][trig]->SetLineColor(kBlack);
 	projZDCx[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
+	gStyle->SetOptFit(1111);
 	if(ptbin == 0)
 	  projZDCx[ptbin][trig]->SetTitle("Pileup by hadPT bins");
+	projZDCx[ptbin][trig]->Fit("pol1");
+	projZDCx[ptbin][trig]->GetFunction("pol1")->SetLineColor(kRed);
+	TPaveStats *st = ((TPaveStats*)(projZDCx[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
+	if (st) {
+	  st->SetTextColor(projZDCx[ptbin][trig]->GetFunction("pol1")->GetLineColor());
+	  st->SetX1NDC(0.64); st->SetX2NDC(0.99);
+	  st->SetY1NDC(0.4); st->SetY2NDC(0.6);
+	}
+	pile[trig]->Modified();pile[trig]->Update();
 	projZDCx[ptbin][trig]->Draw("");
       }
   }
@@ -372,7 +406,7 @@ void offline(const char* FileName="test")
   TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
   fp->cd();
   TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
-  bLabel->SetFillColor(kBlack);
+  bLabel->SetFillColor(38);
   bLabel->Draw();
   TLatex tl;
   tl.SetNDC();
@@ -392,7 +426,7 @@ void offline(const char* FileName="test")
   tl.DrawLatex(0.05, 0.92,tlName);
   
   TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
-  bFoot->SetFillColor(kBlack);
+  bFoot->SetFillColor(38);
   bFoot->Draw();
   tl.SetTextColor(kWhite);
   tl.SetTextSize(0.05);
@@ -402,7 +436,7 @@ void offline(const char* FileName="test")
   tl.DrawLatex(0.1, 0.14, titlename);
   sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
   tl.DrawLatex(0.1, 0.8,tlName);
-  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7");
+  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7;");
   tl.DrawLatex(0.1, 0.75,tlName);
   sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
   tl.DrawLatex(0.1, 0.7,tlName);

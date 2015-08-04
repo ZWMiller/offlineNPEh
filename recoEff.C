@@ -69,6 +69,8 @@
   TGraphErrors* gammaPlot = new TGraphErrors(plotRange-1,x,gammaEff,dx,dy);
   TGraphErrors* effPlot = new TGraphErrors(plotRange-1,x,y,dx,dy);
 
+ 
+
   TCanvas * c1 = new TCanvas("c1","",100,0,1000,900);
   c1->Divide(2,2);
   c1->cd(1);
@@ -110,5 +112,24 @@
   effPlot->SetLineColor(kBlue);
   effPlot->SetMarkerStyle(7);
   effPlot->Draw("ap");
+
+   // Do fits
+  char fitName[100];
+  sprintf(fitName,"myF");
+  TF1 * myF = new TF1("myF","[0]*TMath::Log(x*[1])");
+  myF->SetParName(0,"c0");
+  myF->SetParName(1,"c1");
+  myF->SetParameter(0,1);
+  myF->SetParameter(1,1);
+  gStyle->SetOptFit(1111);
+  effPlot->Fit(fitName,"","",3,13);
+  effPlot->GetFunction(fitName)->SetLineColor(kRed);
+  TPaveStats *st = ((TPaveStats*)(effPlot->GetListOfFunctions()->FindObject("stats")));
+  if (st) {
+    st->SetTextColor(effPlot->GetFunction(fitName)->GetLineColor());
+    st->SetX1NDC(0.64); st->SetX2NDC(0.99);
+    st->SetY1NDC(0.4); st->SetY2NDC(0.6);
+  }
+  c1->Update();
   
 }

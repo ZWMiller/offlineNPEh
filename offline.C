@@ -34,12 +34,32 @@ void offline(const char* FileName="test")
       stream >> number;
       if(number == 0)
 	gROOT->SetBatch(kFALSE);
+      if(number == 1)
+	gROOT->SetBatch(kTRUE);
     }
     else
       {
-	number = 0;
-	gROOT->SetBatch(kTRUE);}
-			       
+	number = 1;
+	gROOT->SetBatch(kTRUE);
+      }
+  }
+
+    // Set option for pdf creation
+  number = 2; Bool_t makePDF = kTRUE;
+  while(number > 1 || number < 0){
+    std::cout << "Make PDF? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ){
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	makePDF = kFALSE;
+      if(number == 1)
+	makePDF = kTRUE;
+    }
+    else
+      number = 1; 
   }
   
   // Open ROOT File
@@ -99,20 +119,22 @@ void offline(const char* FileName="test")
   TCanvas * result[numTrigs];
   TCanvas * result2[numTrigs];
   TCanvas * inMass[numTrigs];
+  TCanvas * singlePlot;
+  singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
   
   
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
     // Create and Segment Canvas
-    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists (Unweighted)",100,0,1000,900);
-    c2[trig] = new TCanvas(Form("cWt%i",trig),"Photonic Hists (Weighted)",100,0,1000,900);
-    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists (Unweighted)",150,0,1050,900);
-    IN2[trig]= new TCanvas(Form("INwt%i",trig),"Inclusive Hists (Weighted)",150,0,1050,900);
-    pile[trig] = new TCanvas(Form("pile%i",trig),"Pileup Monitor",200,0,1100,900);
-    inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",200,0,1100,900);
-    result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic (Unweighted)",250,0,1150,900);
-    result2[trig] = new TCanvas(Form("resultWt%i",trig),"Inclusive - Photonic (Weighted)",250,0,1150,900);
+    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists (Unweighted)",150,0,1150,1000);
+    c2[trig] = new TCanvas(Form("cWt%i",trig),"Photonic Hists (Weighted)",150,0,1150,1000);
+    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists (Unweighted)",150,0,1150,1000);
+    IN2[trig]= new TCanvas(Form("INwt%i",trig),"Inclusive Hists (Weighted)",150,0,1150,1000);
+    pile[trig] = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
+    inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
+    result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic (Unweighted)",150,0,1150,1000);
+    result2[trig] = new TCanvas(Form("resultWt%i",trig),"Inclusive - Photonic (Weighted)",150,0,1150,1000);
     c[trig] -> Divide(4,3);
     c2[trig]-> Divide(4,3);
     inMass[trig]->Divide(4,3);
@@ -170,12 +192,12 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       // Rebin all as necessary
-      LSIM[ptbin][trig]  -> Rebin(4);
-      USIM[ptbin][trig]  -> Rebin(4);
-      INCL[ptbin][trig]  -> Rebin(4);
-      INCL2[ptbin][trig] -> Rebin(4);
-      LSIM2[ptbin][trig] -> Rebin(4);
-      USIM2[ptbin][trig] -> Rebin(4);
+      LSIM[ptbin][trig]  -> Rebin(1);
+      USIM[ptbin][trig]  -> Rebin(1);
+      INCL[ptbin][trig]  -> Rebin(1);
+      INCL2[ptbin][trig] -> Rebin(1);
+      LSIM2[ptbin][trig] -> Rebin(1);
+      USIM2[ptbin][trig] -> Rebin(1);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -325,10 +347,10 @@ void offline(const char* FileName="test")
       SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
       SUB3->Scale(1./epsilon[ptbin]); // Scale by reconstruction efficiency
       SUB2->Add(SUB3,-1);
-      SUB2->SetLineColor(kBlack);
+      SUB2->SetLineColor(kRed);
       SUB2->SetLineWidth(1);
-      SUB2->SetFillStyle(3001);
-      SUB2->SetFillColor(kYellow);
+      //SUB2->SetFillStyle(3001);
+      //SUB2->SetFillColor(kYellow);
       SUB2->GetXaxis()->SetRangeUser(-2,5);
       SUB2->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       if(ptbin == 0)
@@ -351,8 +373,8 @@ void offline(const char* FileName="test")
       SUB6->Add(SUB7,-1);
       SUB6->SetLineColor(kBlack);
       SUB6->SetLineWidth(1);
-      SUB6->SetFillStyle(3001);
-      SUB6->SetFillColor(kYellow);
+      //SUB6->SetFillStyle(3001);
+      // SUB6->SetFillColor(kYellow);
       SUB6->GetXaxis()->SetRangeUser(-2,5);
       SUB6->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       if(ptbin == 0)
@@ -364,6 +386,19 @@ void offline(const char* FileName="test")
       else
 	SUB6->SetTitle("");
       SUB6->Draw("hist");
+
+      if(trig == 2 && ptbin == 3)
+	{
+	  singlePlot->cd();
+	  TH1F *WGHT = (TH1F*)SUB6->Clone();
+	  TH1F *UNWGHT = (TH1F*)SUB2->Clone();
+	  WGHT->Draw("hist");
+	  UNWGHT->Draw("hist same");
+	  TLegend* legA = new TLegend(0.55,0.65,0.8,0.75);
+	  legA->AddEntry(WGHT,"w/ Hadron Weighting","l");
+	  legA->AddEntry(UNWGHT,"w/o Hadron Weighting", "l");
+	  legA->Draw();
+	}
     }
 
     // Make projections of hadron pt bins
@@ -385,9 +420,17 @@ void offline(const char* FileName="test")
 	pile[trig]->cd(ptbin+1);
 	projZDCx[ptbin][trig]->SetLineColor(kBlack);
 	projZDCx[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
+	projZDCx[ptbin][trig]->GetYaxis()->SetTitle("<nTracks>");
+
 	gStyle->SetOptFit(1111);
 	if(ptbin == 0)
-	  projZDCx[ptbin][trig]->SetTitle("Pileup by hadPT bins");
+	  projZDCx[ptbin][trig]->SetTitle("p_{T,h} > 0.2 GeV/c");
+	if(ptbin == 1)
+	  projZDCx[ptbin][trig]->SetTitle("p_{T,h} > 0.5 GeV/c");
+	if(ptbin == 2)
+	  projZDCx[ptbin][trig]->SetTitle("p_{T,h} > 1.0 GeV/c");
+	if(ptbin == 3)
+	  projZDCx[ptbin][trig]->SetTitle("p_{T,h} > 1.5 GeV/c");
 	projZDCx[ptbin][trig]->Fit("pol1");
 	projZDCx[ptbin][trig]->GetFunction("pol1")->SetLineColor(kRed);
 	TPaveStats *st = ((TPaveStats*)(projZDCx[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
@@ -402,83 +445,85 @@ void offline(const char* FileName="test")
   }
 
   // Make PDF with output canvases
-  //Set front page
-  TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
-  fp->cd();
-  TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
-  bLabel->SetFillColor(38);
-  bLabel->Draw();
-  TLatex tl;
-  tl.SetNDC();
-  tl.SetTextColor(kWhite);
-  tl.SetTextSize(0.033);
-  char tlName[100];
-  char tlName2[100];
-  
-  TString titlename = FileName;
-  int found = titlename.Last('/');
-  if(found >= 0){
-    titlename.Replace(0, found+1, "");
-  } 
-  sprintf(tlName, "RUN 12 pp 200 GeV NPE-h    #Delta#phi Analysis");
-  tl.SetTextSize(0.05);
-  tl.SetTextColor(kWhite);
-  tl.DrawLatex(0.05, 0.92,tlName);
-  
-  TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
-  bFoot->SetFillColor(38);
-  bFoot->Draw();
-  tl.SetTextColor(kWhite);
-  tl.SetTextSize(0.05);
-  tl.DrawLatex(0.05, 0.05, (new TDatime())->AsString());
-  tl.SetTextColor(kBlack);
-  tl.SetTextSize(0.03);
-  tl.DrawLatex(0.1, 0.14, titlename);
-  sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
-  tl.DrawLatex(0.1, 0.8,tlName);
-  sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7;");
-  tl.DrawLatex(0.1, 0.75,tlName);
-  sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
-  tl.DrawLatex(0.1, 0.7,tlName);
-  sprintf(tlName,"hID: pT > 0.2;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 0.1 cm;");
-  tl.DrawLatex(0.1, 0.6,tlName);
-  sprintf(tlName,"       !( -1 < n  #sigma_{e TPC} < 3);");
-  tl.DrawLatex(0.1, 0.55,tlName);
-  sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;  #left|V_{z}-V_{z-VPD}#right| < 6 cm;");
-  tl.DrawLatex(0.1, 0.45,tlName);
-        
-  
-  // Place canvases in order
-  TCanvas* temp = new TCanvas();
-  sprintf(name, "%s.pdf[", FileName);
-  temp->Print(name);
-  sprintf(name, "%s.pdf", FileName);
-  temp = fp; // print front page
-  temp->Print(name);
-  for(Int_t ii=0; ii<numTrigs; ii++)
+  if(makePDF)
     {
-      if(!fPaintAll && (ii==1 || ii==3))
-	continue;
-      temp = IN[ii];
-      temp->Print(name);
-      temp = c[ii];
-      temp->Print(name);
-      temp = result[ii];
-      temp->Print(name);
-      temp = IN2[ii];
-      temp->Print(name);
-      temp = c2[ii];
-      temp->Print(name);
-      temp = result2[ii];
-      temp->Print(name);
-      temp = pile[ii];
-      temp->Print(name);
-      temp = inMass[ii];
-      temp->Print(name);
+      //Set front page
+      TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
+      fp->cd();
+      TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
+      bLabel->SetFillColor(38);
+      bLabel->Draw();
+      TLatex tl;
+      tl.SetNDC();
+      tl.SetTextColor(kWhite);
+      tl.SetTextSize(0.033);
+      char tlName[100];
+      char tlName2[100];
       
+      TString titlename = FileName;
+      int found = titlename.Last('/');
+      if(found >= 0){
+	titlename.Replace(0, found+1, "");
+      } 
+      sprintf(tlName, "RUN 12 pp 200 GeV NPE-h    #Delta#phi Analysis");
+      tl.SetTextSize(0.05);
+      tl.SetTextColor(kWhite);
+      tl.DrawLatex(0.05, 0.92,tlName);
+      
+      TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
+      bFoot->SetFillColor(38);
+      bFoot->Draw();
+      tl.SetTextColor(kWhite);
+      tl.SetTextSize(0.05);
+      tl.DrawLatex(0.05, 0.05, (new TDatime())->AsString());
+      tl.SetTextColor(kBlack);
+      tl.SetTextSize(0.03);
+      tl.DrawLatex(0.1, 0.14, titlename);
+      sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
+      tl.DrawLatex(0.1, 0.8,tlName);
+      sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7;");
+      tl.DrawLatex(0.1, 0.75,tlName);
+      sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
+      tl.DrawLatex(0.1, 0.7,tlName);
+      sprintf(tlName,"hID: pT > 0.2;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
+      tl.DrawLatex(0.1, 0.6,tlName);
+      sprintf(tlName,"       !( -1 < n  #sigma_{e TPC} < 3);");
+      tl.DrawLatex(0.1, 0.55,tlName);
+      sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;  #left|V_{z}-V_{z-VPD}#right| < 6 cm;");
+      tl.DrawLatex(0.1, 0.45,tlName);
+      
+      
+      // Place canvases in order
+      TCanvas* temp = new TCanvas();
+      sprintf(name, "%s.pdf[", FileName);
+      temp->Print(name);
+      sprintf(name, "%s.pdf", FileName);
+      temp = fp; // print front page
+      temp->Print(name);
+      for(Int_t ii=0; ii<numTrigs; ii++)
+	{
+	  if(!fPaintAll && (ii==1 || ii==3))
+	    continue;
+	  temp = IN[ii];
+	  temp->Print(name);
+	  temp = c[ii];
+	  temp->Print(name);
+	  temp = result[ii];
+	  temp->Print(name);
+	  temp = IN2[ii];
+	  temp->Print(name);
+	  temp = c2[ii];
+	  temp->Print(name);
+	  temp = result2[ii];
+	  temp->Print(name);
+	  temp = pile[ii];
+	  temp->Print(name);
+	  temp = inMass[ii];
+	  temp->Print(name);
+	  
+	}
+      sprintf(name, "%s.pdf]", FileName);
+      temp->Print(name);
     }
-  sprintf(name, "%s.pdf]", FileName);
-  temp->Print(name);
-
 }
 

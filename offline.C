@@ -122,7 +122,6 @@ void offline(const char* FileName="test")
   TCanvas * singlePlot;
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
   
-  
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 

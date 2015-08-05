@@ -72,6 +72,7 @@
  
 
   TCanvas * c1 = new TCanvas("c1","",100,0,1000,900);
+  TCanvas * c2 = new TCanvas("c2","",100,0,1000,1000);
   c1->Divide(2,2);
   c1->cd(1);
   etaPlot->SetTitle("#eta Dalitz");
@@ -113,7 +114,12 @@
   effPlot->SetMarkerStyle(7);
   effPlot->Draw("ap");
 
+  TGraphErrors* bigPlot = (TGraphErrors*)effPlot->Clone();
+  c2->cd();
+  bigPlot->Draw("ap");
+
    // Do fits
+  c1->cd(4);
   char fitName[100];
   sprintf(fitName,"myF");
   TF1 * myF = new TF1("myF","[0]*TMath::Log(x*[1])");

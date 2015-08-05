@@ -146,7 +146,7 @@ void offline(const char* FileName="test")
     // Make Projections (first get 2d/3d hists, then project)
     Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
     Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
-    Float_t hptCut=0.2;
+    Float_t hptCut=0.5;
     mh2PhiQPt[trig]    = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
     mh2nSigmaEPt[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
     mh2nSigmaEPt_eID[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
@@ -178,6 +178,12 @@ void offline(const char* FileName="test")
     
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
 
+      Int_t inclNorm = projnSigmaE_eID[ptbin][trig]->GetEntries();
+      Int_t LSNorm   = projInvMassLS[ptbin][trig]->GetEntries();
+      Int_t USNorm   = projInvMassUS[ptbin][trig]->GetEntries();
+
+      Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin])*((Float_t)USNorm - (Float_t)LSNorm); // Use the number of "signal" counts
+
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
       c[trig]->cd(ptbin+1);
@@ -191,12 +197,12 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       // Rebin all as necessary
-      LSIM[ptbin][trig]  -> Rebin(1);
-      USIM[ptbin][trig]  -> Rebin(1);
-      INCL[ptbin][trig]  -> Rebin(1);
-      INCL2[ptbin][trig] -> Rebin(1);
-      LSIM2[ptbin][trig] -> Rebin(1);
-      USIM2[ptbin][trig] -> Rebin(1);
+      LSIM[ptbin][trig]  -> Rebin(4);
+      USIM[ptbin][trig]  -> Rebin(4);
+      INCL[ptbin][trig]  -> Rebin(4);
+      INCL2[ptbin][trig] -> Rebin(4);
+      LSIM2[ptbin][trig] -> Rebin(4);
+      USIM2[ptbin][trig] -> Rebin(4);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -346,12 +352,15 @@ void offline(const char* FileName="test")
       SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
       SUB3->Scale(1./epsilon[ptbin]); // Scale by reconstruction efficiency
       SUB2->Add(SUB3,-1);
-      SUB2->SetLineColor(kRed);
+      SUB2->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1)));
+      SUB2->SetLineColor(kBlack);
       SUB2->SetLineWidth(1);
-      //SUB2->SetFillStyle(3001);
-      //SUB2->SetFillColor(kYellow);
+      SUB2->SetFillStyle(3001);
+      SUB2->SetFillColor(kYellow);
       SUB2->GetXaxis()->SetRangeUser(-2,5);
       SUB2->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      SUB2->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
+      SUB2->GetYaxis()->SetTitleOffset(1.6);
       if(ptbin == 0)
 	SUB2->SetTitle("Inclusive - Photonic/#epsilon (unweighted)");
       else if (ptbin == 1 && trig !=3)
@@ -370,12 +379,15 @@ void offline(const char* FileName="test")
       SUB7->Sumw2(kFALSE); SUB7->Sumw2(kTRUE); // Lock errors before scaling
       SUB7->Scale(1./epsilon[ptbin]); // Scale by reconstruction efficiency
       SUB6->Add(SUB7,-1);
+      SUB6->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1)));
       SUB6->SetLineColor(kBlack);
       SUB6->SetLineWidth(1);
-      //SUB6->SetFillStyle(3001);
-      // SUB6->SetFillColor(kYellow);
+      SUB6->SetFillStyle(3001);
+      SUB6->SetFillColor(kYellow);
       SUB6->GetXaxis()->SetRangeUser(-2,5);
       SUB6->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      SUB6->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
+      SUB6->GetYaxis()->SetTitleOffset(1.6);
       if(ptbin == 0)
 	SUB6->SetTitle("Inclusive - Photonic/#epsilon (Weighted Hadron)");
       else if (ptbin == 1 && trig !=3)
@@ -385,19 +397,6 @@ void offline(const char* FileName="test")
       else
 	SUB6->SetTitle("");
       SUB6->Draw("hist");
-
-      if(trig == 2 && ptbin == 3)
-	{
-	  singlePlot->cd();
-	  TH1F *WGHT = (TH1F*)SUB6->Clone();
-	  TH1F *UNWGHT = (TH1F*)SUB2->Clone();
-	  WGHT->Draw("hist");
-	  UNWGHT->Draw("hist same");
-	  TLegend* legA = new TLegend(0.55,0.65,0.8,0.75);
-	  legA->AddEntry(WGHT,"w/ Hadron Weighting","l");
-	  legA->AddEntry(UNWGHT,"w/o Hadron Weighting", "l");
-	  legA->Draw();
-	}
     }
 
     // Make projections of hadron pt bins
@@ -443,6 +442,12 @@ void offline(const char* FileName="test")
       }
   }
 
+  // inMass[0]->ls();
+  TPad* pNew = (TPad*)result[0]->GetPad(4)->Clone();
+  singlePlot->cd();
+  pNew->ResizePad();
+  pNew->Draw();  
+
   // Make PDF with output canvases
   if(makePDF)
     {
@@ -484,12 +489,14 @@ void offline(const char* FileName="test")
       tl.DrawLatex(0.1, 0.75,tlName);
       sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
       tl.DrawLatex(0.1, 0.7,tlName);
-      sprintf(tlName,"hID: pT > 0.2;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
+      sprintf(tlName,"hID: p_{T} > 0.5;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
       tl.DrawLatex(0.1, 0.6,tlName);
       sprintf(tlName,"       !( -1 < n  #sigma_{e TPC} < 3);");
       tl.DrawLatex(0.1, 0.55,tlName);
       sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;  #left|V_{z}-V_{z-VPD}#right| < 6 cm;");
       tl.DrawLatex(0.1, 0.45,tlName);
+       sprintf(tlName,"Triggers:  BHT0; BHT2;");
+      tl.DrawLatex(0.1, 0.35,tlName);
       
       
       // Place canvases in order

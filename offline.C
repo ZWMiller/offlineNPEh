@@ -78,6 +78,7 @@ void offline(const char* FileName="test")
  // Reconstruction efficiency
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
+  TH1D * USIMNP[numPtBins][numTrigs];
   TH1D * INCL[numPtBins][numTrigs];
   TH1D * LSIM2[numPtBins][numTrigs];
   TH1D * USIM2[numPtBins][numTrigs];
@@ -94,6 +95,7 @@ void offline(const char* FileName="test")
   TH3F* mh3DelPhiIncl[numTrigs];
   TH3F* mh3DelPhiPhotLS[numTrigs];
   TH3F* mh3DelPhiPhotUS[numTrigs];
+  TH3F* mh3DelPhiPhotUSNP[numTrigs];
   TH3F* mh3DelPhiInclWt[numTrigs];
   TH3F* mh3DelPhiPhotLSWt[numTrigs];
   TH3F* mh3DelPhiPhotUSWt[numTrigs];
@@ -106,6 +108,7 @@ void offline(const char* FileName="test")
   TH1D* projDelPhiIncl[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLS[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUS[numPtBins][numTrigs];
+  TH1D* projDelPhiPhotUSNP[numPtBins][numTrigs];
   TH1D* projDelPhiInclWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLSWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSWt[numPtBins][numTrigs];
@@ -119,6 +122,7 @@ void offline(const char* FileName="test")
   TCanvas * result[numTrigs];
   TCanvas * result2[numTrigs];
   TCanvas * inMass[numTrigs];
+  TCanvas * USComp[numTrigs];
   TCanvas * singlePlot;
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
   
@@ -134,6 +138,7 @@ void offline(const char* FileName="test")
     inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
     result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic (Unweighted)",150,0,1150,1000);
     result2[trig] = new TCanvas(Form("resultWt%i",trig),"Inclusive - Photonic (Weighted)",150,0,1150,1000);
+     USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
     c[trig] -> Divide(4,3);
     c2[trig]-> Divide(4,3);
     inMass[trig]->Divide(4,3);
@@ -141,7 +146,8 @@ void offline(const char* FileName="test")
     IN2[trig]->Divide(4,3);
     pile[trig]->Divide(2,2);
     result[trig]->Divide(4,3);
-    result2[trig]->Divide(4,3);    
+    result2[trig]->Divide(4,3);
+    USComp[trig]->Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
     Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
@@ -153,6 +159,7 @@ void offline(const char* FileName="test")
     mh3DelPhiIncl[trig] = (TH3F*)f->Get(Form("mh3DelPhiIncl_%i",trig));
     mh3DelPhiPhotLS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
     mh3DelPhiPhotUS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
+    mh3DelPhiPhotUSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSNP_%i",trig));
     mh3DelPhiInclWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiInclWt_%i",trig));
     mh3DelPhiPhotLSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSWt_%i",trig));
     mh3DelPhiPhotUSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSWt_%i",trig));
@@ -167,6 +174,7 @@ void offline(const char* FileName="test")
 	projnSigmaE_eID[ptbin][trig]    = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),-1);
@@ -190,6 +198,7 @@ void offline(const char* FileName="test")
       // Assign to a single, simpler name for manip
       LSIM[ptbin][trig]  = projDelPhiPhotLS[ptbin][trig];
       USIM[ptbin][trig]  = projDelPhiPhotUS[ptbin][trig];
+      USIMNP[ptbin][trig]= projDelPhiPhotUSNP[ptbin][trig];
       INCL[ptbin][trig]  = projDelPhiIncl[ptbin][trig];
       INCL2[ptbin][trig] = projDelPhiInclWt[ptbin][trig];
       LSIM2[ptbin][trig] = projDelPhiPhotLSWt[ptbin][trig];
@@ -197,12 +206,13 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       // Rebin all as necessary
-      LSIM[ptbin][trig]  -> Rebin(4);
-      USIM[ptbin][trig]  -> Rebin(4);
-      INCL[ptbin][trig]  -> Rebin(4);
-      INCL2[ptbin][trig] -> Rebin(4);
-      LSIM2[ptbin][trig] -> Rebin(4);
-      USIM2[ptbin][trig] -> Rebin(4);
+      LSIM[ptbin][trig]  -> Rebin(8);
+      USIM[ptbin][trig]  -> Rebin(8);
+      USIMNP[ptbin][trig]-> Rebin(8);
+      INCL[ptbin][trig]  -> Rebin(8);
+      INCL2[ptbin][trig] -> Rebin(8);
+      LSIM2[ptbin][trig] -> Rebin(8);
+      USIM2[ptbin][trig] -> Rebin(8);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -218,11 +228,11 @@ void offline(const char* FileName="test")
 	USIM[ptbin][trig]->SetTitle("MB");
       else
 	USIM[ptbin][trig]->SetTitle("");
-      USIM[ptbin][trig]->Draw("hist");
+      USIM[ptbin][trig]->Draw("");
       
       LSIM[ptbin][trig]->SetLineColor(kBlack);
       LSIM[ptbin][trig]->SetLineWidth(1);
-      LSIM[ptbin][trig]->Draw("hist same");
+      LSIM[ptbin][trig]->Draw(" same");
 
       // Subtraction of (US-LS)
       TH1F *SUB = (TH1F*)USIM[ptbin][trig]->Clone(); //
@@ -232,13 +242,35 @@ void offline(const char* FileName="test")
       SUB->SetLineWidth(1);
       SUB->SetFillStyle(3001);
       SUB->SetFillColor(kBlue);
-      SUB->Draw("hist same");
+      SUB->Draw("same");
       TLegend* leg = new TLegend(0.55,0.65,0.8,0.75);
       leg->AddEntry(USIM[ptbin][trig],"Unlike Sign","l");
       leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "l");
       leg->AddEntry(SUB,"Unlike - Like", "f");
       leg->Draw();
 
+      // Plot different US (w/wo partner)
+      USComp[trig]->cd(ptbin+1);
+      TH1F *USwP = (TH1F*)USIM[ptbin][trig]->Clone();
+      USwP->SetLineColor(kRed); //with partner tracks
+      USwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      USwP->GetXaxis()->SetRangeUser(-2,5);
+      if(ptbin == 0)
+	USwP->SetTitle("Photonic Unlike Distributions");
+      else if (ptbin == 1 && trig !=3)
+	USwP->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	USwP->SetTitle("MB");
+      else
+	USwP->SetTitle("");
+      USwP->Draw("");
+      USIMNP[ptbin][trig]->SetLineColor(kBlack);
+      USIMNP[ptbin][trig]->Draw("same");
+      TLegend* legUS = new TLegend(0.55,0.65,0.8,0.75);
+      legUS->AddEntry(USwP,"With Partner Track","l");
+      legUS->AddEntry(USIMNP[ptbin][trig],"Partner Track Removed", "l");
+      legUS->Draw();
+      
       c2[trig]->cd(ptbin+1); // With hadron weighting
       USIM2[ptbin][trig]->SetLineColor(kRed);
       USIM2[ptbin][trig]->SetLineWidth(1);
@@ -252,11 +284,11 @@ void offline(const char* FileName="test")
 	USIM2[ptbin][trig]->SetTitle("MB");
       else
 	USIM2[ptbin][trig]->SetTitle("");
-      USIM2[ptbin][trig]->Draw("hist");
+      USIM2[ptbin][trig]->Draw("");
       
       LSIM2[ptbin][trig]->SetLineColor(kBlack);
       LSIM2[ptbin][trig]->SetLineWidth(1);
-      LSIM2[ptbin][trig]->Draw("hist same");
+      LSIM2[ptbin][trig]->Draw("same");
 
       // Subtraction of (US-LS)
       TH1F *SUB5 = (TH1F*)USIM2[ptbin][trig]->Clone(); //
@@ -266,7 +298,7 @@ void offline(const char* FileName="test")
       SUB5->SetLineWidth(1);
       SUB5->SetFillStyle(3001);
       SUB5->SetFillColor(kBlue);
-      SUB5->Draw("hist same");
+      SUB5->Draw("same");
       TLegend* leg3 = new TLegend(0.55,0.65,0.8,0.75);
       leg3->AddEntry(USIM2[ptbin][trig],"Unlike Sign","l");
       leg3->AddEntry(LSIM2[ptbin][trig],"Like Sign", "l");
@@ -287,11 +319,11 @@ void offline(const char* FileName="test")
 	USMM[ptbin][trig]->SetTitle("MB");
       else
 	USMM[ptbin][trig]->SetTitle("");
-      USMM[ptbin][trig]->Draw("hist");
+      USMM[ptbin][trig]->Draw("");
       
       LSMM[ptbin][trig]->SetLineColor(kBlack);
       LSMM[ptbin][trig]->SetLineWidth(1);
-      LSMM[ptbin][trig]->Draw("hist same");
+      LSMM[ptbin][trig]->Draw("same");
 
       // Subtraction of (US-LS)
       TH1F *SUB4 = (TH1F*)USMM[ptbin][trig]->Clone(); //
@@ -301,7 +333,7 @@ void offline(const char* FileName="test")
       SUB4->SetLineWidth(1);
       SUB4->SetFillStyle(3001);
       SUB4->SetFillColor(kBlue);
-      SUB4->Draw("hist same");
+      SUB4->Draw("same");
       TLegend* leg2 = new TLegend(0.55,0.65,0.8,0.75);
       leg2->AddEntry(USMM[ptbin][trig],"Unlike Sign","l");
       leg2->AddEntry(LSMM[ptbin][trig],"Like Sign", "l");
@@ -322,7 +354,7 @@ void offline(const char* FileName="test")
 	INCL[ptbin][trig]->SetTitle("MB");
       else
 	INCL[ptbin][trig]->SetTitle("");
-      INCL[ptbin][trig]->Draw("hist");
+      INCL[ptbin][trig]->Draw("");
 
       IN[trig]->Update();
 
@@ -340,7 +372,7 @@ void offline(const char* FileName="test")
 	INCL2[ptbin][trig]->SetTitle("MB");
       else
 	INCL2[ptbin][trig]->SetTitle("");
-      INCL2[ptbin][trig]->Draw("hist");
+      INCL2[ptbin][trig]->Draw("");
 
       IN2[trig]->Update();
       
@@ -369,7 +401,7 @@ void offline(const char* FileName="test")
 	SUB2->SetTitle("MB");
       else
 	SUB2->SetTitle("");
-      SUB2->Draw("hist");
+      SUB2->Draw("");
 
         // Subtraction of Inclusive - (US-LS) (weighted)
       result2[trig]->cd(ptbin+1);
@@ -396,7 +428,7 @@ void offline(const char* FileName="test")
 	SUB6->SetTitle("MB");
       else
 	SUB6->SetTitle("");
-      SUB6->Draw("hist");
+      SUB6->Draw("");
     }
 
     // Make projections of hadron pt bins
@@ -525,6 +557,8 @@ void offline(const char* FileName="test")
 	  temp = pile[ii];
 	  temp->Print(name);
 	  temp = inMass[ii];
+	  temp->Print(name);
+	  temp = USComp[ii];
 	  temp->Print(name);
 	  
 	}

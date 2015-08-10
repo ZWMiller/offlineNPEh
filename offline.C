@@ -79,6 +79,8 @@ void offline(const char* FileName="test")
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
   TH1D * USIMNP[numPtBins][numTrigs];
+  TH1D * LSIMNP[numPtBins][numTrigs];
+  TH1D * INCLNP[numPtBins][numTrigs];
   TH1D * INCL[numPtBins][numTrigs];
   TH1D * LSIM2[numPtBins][numTrigs];
   TH1D * USIM2[numPtBins][numTrigs];
@@ -96,6 +98,8 @@ void offline(const char* FileName="test")
   TH3F* mh3DelPhiPhotLS[numTrigs];
   TH3F* mh3DelPhiPhotUS[numTrigs];
   TH3F* mh3DelPhiPhotUSNP[numTrigs];
+  TH3F* mh3DelPhiPhotLSNP[numTrigs];
+  TH3F* mh3DelPhiPhotInclNP[numTrigs];
   TH3F* mh3DelPhiInclWt[numTrigs];
   TH3F* mh3DelPhiPhotLSWt[numTrigs];
   TH3F* mh3DelPhiPhotUSWt[numTrigs];
@@ -109,6 +113,8 @@ void offline(const char* FileName="test")
   TH1D* projDelPhiPhotLS[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUS[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSNP[numPtBins][numTrigs];
+  TH1D* projDelPhiPhotLSNP[numPtBins][numTrigs];
+  TH1D* projDelPhiPhotInclNP[numPtBins][numTrigs];
   TH1D* projDelPhiInclWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLSWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSWt[numPtBins][numTrigs];
@@ -123,6 +129,8 @@ void offline(const char* FileName="test")
   TCanvas * result2[numTrigs];
   TCanvas * inMass[numTrigs];
   TCanvas * USComp[numTrigs];
+  TCanvas * LSComp[numTrigs];
+  TCanvas * InclComp[numTrigs];
   TCanvas * singlePlot;
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
   
@@ -138,7 +146,9 @@ void offline(const char* FileName="test")
     inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
     result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic (Unweighted)",150,0,1150,1000);
     result2[trig] = new TCanvas(Form("resultWt%i",trig),"Inclusive - Photonic (Weighted)",150,0,1150,1000);
-     USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
+    USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
+    LSComp[trig] = new TCanvas(Form("LSComp%i",trig),"Like Sign Distributions",150,0,1150,1000);
+    InclComp[trig] = new TCanvas(Form("InclComp%i",trig),"Inclusive Distributions",150,0,1150,1000);
     c[trig] -> Divide(4,3);
     c2[trig]-> Divide(4,3);
     inMass[trig]->Divide(4,3);
@@ -148,6 +158,8 @@ void offline(const char* FileName="test")
     result[trig]->Divide(4,3);
     result2[trig]->Divide(4,3);
     USComp[trig]->Divide(4,3);
+    LSComp[trig]->Divide(4,3);
+    InclComp[trig]->Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
     Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
@@ -160,6 +172,8 @@ void offline(const char* FileName="test")
     mh3DelPhiPhotLS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
     mh3DelPhiPhotUS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
     mh3DelPhiPhotUSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSNP_%i",trig));
+    mh3DelPhiPhotLSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSNP_%i",trig));
+    mh3DelPhiPhotInclNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotInclNP_%i",trig));
     mh3DelPhiInclWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiInclWt_%i",trig));
     mh3DelPhiPhotLSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSWt_%i",trig));
     mh3DelPhiPhotUSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSWt_%i",trig));
@@ -175,6 +189,10 @@ void offline(const char* FileName="test")
 	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
+		projDelPhiPhotInclNP[ptbin][trig] = mh3DelPhiPhotInclNP[trig]->ProjectionX(Form("projDelPhiPhotInclNP_%i_%i",ptbin,trig),mh3DelPhiPhotInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotInclNP[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),-1);
@@ -199,6 +217,8 @@ void offline(const char* FileName="test")
       LSIM[ptbin][trig]  = projDelPhiPhotLS[ptbin][trig];
       USIM[ptbin][trig]  = projDelPhiPhotUS[ptbin][trig];
       USIMNP[ptbin][trig]= projDelPhiPhotUSNP[ptbin][trig];
+      LSIMNP[ptbin][trig]= projDelPhiPhotLSNP[ptbin][trig];
+      INCLNP[ptbin][trig]= projDelPhiPhotInclNP[ptbin][trig];
       INCL[ptbin][trig]  = projDelPhiIncl[ptbin][trig];
       INCL2[ptbin][trig] = projDelPhiInclWt[ptbin][trig];
       LSIM2[ptbin][trig] = projDelPhiPhotLSWt[ptbin][trig];
@@ -206,45 +226,48 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       // Rebin all as necessary
-      LSIM[ptbin][trig]  -> Rebin(8);
-      USIM[ptbin][trig]  -> Rebin(8);
-      USIMNP[ptbin][trig]-> Rebin(8);
-      INCL[ptbin][trig]  -> Rebin(8);
-      INCL2[ptbin][trig] -> Rebin(8);
-      LSIM2[ptbin][trig] -> Rebin(8);
-      USIM2[ptbin][trig] -> Rebin(8);
+      Int_t RB = 8;
+      LSIM[ptbin][trig]  -> Rebin(RB);
+      USIM[ptbin][trig]  -> Rebin(RB);
+      USIMNP[ptbin][trig]-> Rebin(RB);
+      LSIMNP[ptbin][trig]-> Rebin(RB);
+      INCLNP[ptbin][trig]-> Rebin(RB);
+      INCL[ptbin][trig]  -> Rebin(RB);
+      INCL2[ptbin][trig] -> Rebin(RB);
+      LSIM2[ptbin][trig] -> Rebin(RB);
+      USIM2[ptbin][trig] -> Rebin(RB);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
-      USIM[ptbin][trig]->SetLineColor(kRed); //without hadron weighting
-      USIM[ptbin][trig]->SetLineWidth(1);
-      USIM[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      USIM[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
+      USIMNP[ptbin][trig]->SetLineColor(kRed); //without hadron weighting
+      USIMNP[ptbin][trig]->SetLineWidth(1);
+      USIMNP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      USIMNP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
       if(ptbin == 0)
-	USIM[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (Unweighted)");
+	USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (Unweighted)");
       else if (ptbin == 1 && trig !=3)
-	USIM[ptbin][trig]->SetTitle(Form("HT%i",trig));
+	USIMNP[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	USIM[ptbin][trig]->SetTitle("MB");
+	USIMNP[ptbin][trig]->SetTitle("MB");
       else
-	USIM[ptbin][trig]->SetTitle("");
-      USIM[ptbin][trig]->Draw("");
+	USIMNP[ptbin][trig]->SetTitle("");
+      USIMNP[ptbin][trig]->Draw("");
       
       LSIM[ptbin][trig]->SetLineColor(kBlack);
       LSIM[ptbin][trig]->SetLineWidth(1);
       LSIM[ptbin][trig]->Draw(" same");
 
-      // Subtraction of (US-LS)
-      TH1F *SUB = (TH1F*)USIM[ptbin][trig]->Clone(); //
-      SUB->SetName("Subtraction");      // Create SUB as a clone of USIM
-      SUB->Add(LSIM[ptbin][trig],-1);
+      // Subtraction of (USNP-LS)
+      TH1F *SUB = (TH1F*)USIMNP[ptbin][trig]->Clone(); //
+      SUB->SetName("Subtraction");      // Create SUB as a clone of USIMNP
+      SUB->Add(LSIMNP[ptbin][trig],-1);
       SUB->SetLineColor(kBlue);
       SUB->SetLineWidth(1);
       SUB->SetFillStyle(3001);
       SUB->SetFillColor(kBlue);
       SUB->Draw("same");
       TLegend* leg = new TLegend(0.55,0.65,0.8,0.75);
-      leg->AddEntry(USIM[ptbin][trig],"Unlike Sign","l");
+      leg->AddEntry(USIMNP[ptbin][trig],"Unlike Sign","l");
       leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "l");
       leg->AddEntry(SUB,"Unlike - Like", "f");
       leg->Draw();
@@ -256,7 +279,7 @@ void offline(const char* FileName="test")
       USwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       USwP->GetXaxis()->SetRangeUser(-2,5);
       if(ptbin == 0)
-	USwP->SetTitle("Photonic Unlike Distributions");
+	USwP->SetTitle("Photonic Unlike Sign Distributions");
       else if (ptbin == 1 && trig !=3)
 	USwP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
@@ -264,12 +287,59 @@ void offline(const char* FileName="test")
       else
 	USwP->SetTitle("");
       USwP->Draw("");
-      USIMNP[ptbin][trig]->SetLineColor(kBlack);
-      USIMNP[ptbin][trig]->Draw("same");
-      TLegend* legUS = new TLegend(0.55,0.65,0.8,0.75);
+      TH1F *USnP = (TH1F*)USIMNP[ptbin][trig]->Clone();
+      USnP->SetLineColor(kBlack);
+      USnP->Draw("same");
+      TLegend* legUS = new TLegend(0.4,0.8,0.77,0.87);
       legUS->AddEntry(USwP,"With Partner Track","l");
-      legUS->AddEntry(USIMNP[ptbin][trig],"Partner Track Removed", "l");
+      legUS->AddEntry(USnP,"Partner Track Removed", "l");
       legUS->Draw();
+
+      // Plot different LS (w/wo partner)
+      LSComp[trig]->cd(ptbin+1);
+      TH1F *LSwP = (TH1F*)LSIM[ptbin][trig]->Clone();
+      LSwP->SetLineColor(kRed); //with partner tracks
+      LSwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      LSwP->GetXaxis()->SetRangeUser(-2,5);
+      if(ptbin == 0)
+	LSwP->SetTitle("Photonic Like Sign Distributions");
+      else if (ptbin == 1 && trig !=3)
+	LSwP->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	LSwP->SetTitle("MB");
+      else
+	LSwP->SetTitle("");
+      LSwP->Draw("");
+      TH1F *LSnP = (TH1F*)LSIMNP[ptbin][trig]->Clone();
+      LSnP->SetLineColor(kBlack);
+      LSnP->Draw("same");
+      TLegend* legLS = new TLegend(0.4,0.8,0.77,0.87);
+      legLS->AddEntry(LSwP,"With Partner Track","l");
+      legLS->AddEntry(LSnP,"Partner Track Removed", "l");
+      legLS->Draw();
+
+      // Plot different Incl (w/wo partner)
+      InclComp[trig]->cd(ptbin+1);
+      TH1F *InclwP = (TH1F*)INCL[ptbin][trig]->Clone();
+      InclwP->SetLineColor(kRed); //with partner tracks
+      InclwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      InclwP->GetXaxis()->SetRangeUser(-2,5);
+      if(ptbin == 0)
+	InclwP->SetTitle("Inclusive Distributions");
+      else if (ptbin == 1 && trig !=3)
+	InclwP->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	InclwP->SetTitle("MB");
+      else
+	InclwP->SetTitle("");
+      InclwP->Draw("");
+      TH1F *InclnP = (TH1F*)INCLNP[ptbin][trig]->Clone();
+      InclnP->SetLineColor(kBlack);
+      InclnP->Draw("same");
+      TLegend* legIncl = new TLegend(0.4,0.8,0.77,0.87);
+      legIncl->AddEntry(InclwP,"With Partner Track","l");
+      legIncl->AddEntry(InclnP,"Partner Track Removed", "l");
+      legIncl->Draw();
       
       c2[trig]->cd(ptbin+1); // With hadron weighting
       USIM2[ptbin][trig]->SetLineColor(kRed);
@@ -378,13 +448,15 @@ void offline(const char* FileName="test")
       
       // Subtraction of Inclusive - (US-LS) (unweighted)
       result[trig]->cd(ptbin+1);
-      TH1F *SUB2 = (TH1F*)INCL[ptbin][trig]->Clone(); //
-      TH1F *SUB3 = (TH1F*)SUB->Clone();
-      SUB2->SetName("");      // Create SUB as a clone of USIM
+      TH1F *SUB2 = (TH1F*)INCL[ptbin][trig]->Clone(); // Inclusive
+      SUB2->SetName("");
+      TH1F *SUB3 = (TH1F*)SUB->Clone(); //(USNP - LSNP)
+      SUB2->Add(USIMNP[ptbin][trig],-1); // Inclusive - US w/Partner 
       SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
-      SUB3->Scale(1./epsilon[ptbin]); // Scale by reconstruction efficiency
-      SUB2->Add(SUB3,-1);
-      SUB2->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1)));
+      SUB3->Scale((1./epsilon[ptbin])-1.); // Scale by (1/eps - 1)
+      SUB2->Add(SUB3,-1); // Subtract the scaled (USNP - LSNP)
+      SUB2->Add(LSIM[ptbin][trig]); // Add back LS w/Partner
+      SUB2->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1))); // Normalize to triggers.
       SUB2->SetLineColor(kBlack);
       SUB2->SetLineWidth(1);
       SUB2->SetFillStyle(3001);
@@ -394,7 +466,7 @@ void offline(const char* FileName="test")
       SUB2->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
       SUB2->GetYaxis()->SetTitleOffset(1.6);
       if(ptbin == 0)
-	SUB2->SetTitle("Inclusive - Photonic/#epsilon (unweighted)");
+	SUB2->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
       else if (ptbin == 1 && trig !=3)
 	SUB2->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
@@ -523,12 +595,10 @@ void offline(const char* FileName="test")
       tl.DrawLatex(0.1, 0.7,tlName);
       sprintf(tlName,"hID: p_{T} > 0.5;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
       tl.DrawLatex(0.1, 0.6,tlName);
-      sprintf(tlName,"       !( -1 < n  #sigma_{e TPC} < 3);");
-      tl.DrawLatex(0.1, 0.55,tlName);
-      sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;  #left|V_{z}-V_{z-VPD}#right| < 6 cm;");
-      tl.DrawLatex(0.1, 0.45,tlName);
+      sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;");
+      tl.DrawLatex(0.1, 0.5,tlName);
        sprintf(tlName,"Triggers:  BHT0; BHT2;");
-      tl.DrawLatex(0.1, 0.35,tlName);
+      tl.DrawLatex(0.1, 0.4,tlName);
       
       
       // Place canvases in order
@@ -548,17 +618,21 @@ void offline(const char* FileName="test")
 	  temp->Print(name);
 	  temp = result[ii];
 	  temp->Print(name);
-	  temp = IN2[ii];
+	  /* temp = IN2[ii];
 	  temp->Print(name);
 	  temp = c2[ii];
 	  temp->Print(name);
 	  temp = result2[ii];
-	  temp->Print(name);
+	  temp->Print(name);*/
 	  temp = pile[ii];
 	  temp->Print(name);
 	  temp = inMass[ii];
 	  temp->Print(name);
 	  temp = USComp[ii];
+	  temp->Print(name);
+	  temp = LSComp[ii];
+	  temp->Print(name);
+	  temp = InclComp[ii];
 	  temp->Print(name);
 	  
 	}

@@ -138,25 +138,19 @@ void offline(const char* FileName="test")
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
     // Create and Segment Canvas
-    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists (Unweighted)",150,0,1150,1000);
-    c2[trig] = new TCanvas(Form("cWt%i",trig),"Photonic Hists (Weighted)",150,0,1150,1000);
-    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists (Unweighted)",150,0,1150,1000);
-    IN2[trig]= new TCanvas(Form("INwt%i",trig),"Inclusive Hists (Weighted)",150,0,1150,1000);
+    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists",150,0,1150,1000);
+    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists",150,0,1150,1000);
     pile[trig] = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
     inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
-    result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic (Unweighted)",150,0,1150,1000);
-    result2[trig] = new TCanvas(Form("resultWt%i",trig),"Inclusive - Photonic (Weighted)",150,0,1150,1000);
+    result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic",150,0,1150,1000);
     USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
     LSComp[trig] = new TCanvas(Form("LSComp%i",trig),"Like Sign Distributions",150,0,1150,1000);
     InclComp[trig] = new TCanvas(Form("InclComp%i",trig),"Inclusive Distributions",150,0,1150,1000);
     c[trig] -> Divide(4,3);
-    c2[trig]-> Divide(4,3);
     inMass[trig]->Divide(4,3);
     IN[trig]-> Divide(4,3);
-    IN2[trig]->Divide(4,3);
     pile[trig]->Divide(2,2);
     result[trig]->Divide(4,3);
-    result2[trig]->Divide(4,3);
     USComp[trig]->Divide(4,3);
     LSComp[trig]->Divide(4,3);
     InclComp[trig]->Divide(4,3);
@@ -239,12 +233,12 @@ void offline(const char* FileName="test")
       
       // Actually manipulate histos and plot (photnic del Phi)
       
-      USIMNP[ptbin][trig]->SetLineColor(kRed); //without hadron weighting
+      USIMNP[ptbin][trig]->SetLineColor(kRed);
       USIMNP[ptbin][trig]->SetLineWidth(1);
       USIMNP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       USIMNP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
       if(ptbin == 0)
-	USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (Unweighted)");
+	USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (No Partner Track)");
       else if (ptbin == 1 && trig !=3)
 	USIMNP[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
@@ -253,9 +247,9 @@ void offline(const char* FileName="test")
 	USIMNP[ptbin][trig]->SetTitle("");
       USIMNP[ptbin][trig]->Draw("");
       
-      LSIM[ptbin][trig]->SetLineColor(kBlack);
-      LSIM[ptbin][trig]->SetLineWidth(1);
-      LSIM[ptbin][trig]->Draw(" same");
+      LSIMNP[ptbin][trig]->SetLineColor(kBlack);
+      LSIMNP[ptbin][trig]->SetLineWidth(1);
+      LSIMNP[ptbin][trig]->Draw(" same");
 
       // Subtraction of (USNP-LS)
       TH1F *SUB = (TH1F*)USIMNP[ptbin][trig]->Clone(); //
@@ -340,40 +334,6 @@ void offline(const char* FileName="test")
       legIncl->AddEntry(InclwP,"With Partner Track","l");
       legIncl->AddEntry(InclnP,"Partner Track Removed", "l");
       legIncl->Draw();
-      
-      c2[trig]->cd(ptbin+1); // With hadron weighting
-      USIM2[ptbin][trig]->SetLineColor(kRed);
-      USIM2[ptbin][trig]->SetLineWidth(1);
-      USIM2[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      USIM2[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
-      if(ptbin == 0)
-	USIM2[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (Weighted)");
-      else if (ptbin == 1 && trig !=3)
-	USIM2[ptbin][trig]->SetTitle(Form("HT%i",trig));
-      else if (trig == 3 && ptbin == 1)
-	USIM2[ptbin][trig]->SetTitle("MB");
-      else
-	USIM2[ptbin][trig]->SetTitle("");
-      USIM2[ptbin][trig]->Draw("");
-      
-      LSIM2[ptbin][trig]->SetLineColor(kBlack);
-      LSIM2[ptbin][trig]->SetLineWidth(1);
-      LSIM2[ptbin][trig]->Draw("same");
-
-      // Subtraction of (US-LS)
-      TH1F *SUB5 = (TH1F*)USIM2[ptbin][trig]->Clone(); //
-      SUB5->SetName("Subtraction");      // Create SUB as a clone of USIM
-      SUB5->Add(LSIM[ptbin][trig],-1);
-      SUB5->SetLineColor(kBlue);
-      SUB5->SetLineWidth(1);
-      SUB5->SetFillStyle(3001);
-      SUB5->SetFillColor(kBlue);
-      SUB5->Draw("same");
-      TLegend* leg3 = new TLegend(0.55,0.65,0.8,0.75);
-      leg3->AddEntry(USIM2[ptbin][trig],"Unlike Sign","l");
-      leg3->AddEntry(LSIM2[ptbin][trig],"Like Sign", "l");
-      leg3->AddEntry(SUB5,"Unlike - Like", "f");
-      leg3->Draw();
 
       // Actually manipulate histos and plot (photonic InvMass)
       inMass[trig]->cd(ptbin+1);
@@ -417,7 +377,7 @@ void offline(const char* FileName="test")
       INCL[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       INCL[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
       if(ptbin == 0)
-	INCL[ptbin][trig]->SetTitle("Inclusive Electrons (Unweighted Hadron)");
+	INCL[ptbin][trig]->SetTitle("Inclusive Electrons");
       else if (ptbin == 1 && trig !=3)
 	INCL[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
@@ -427,26 +387,8 @@ void offline(const char* FileName="test")
       INCL[ptbin][trig]->Draw("");
 
       IN[trig]->Update();
-
-        // Handle Inclusive Hists (weighted hads projection)
-      IN2[trig]->cd(ptbin+1);
-      INCL2[ptbin][trig]->SetLineColor(kBlue);
-      INCL2[ptbin][trig]->SetLineWidth(1);
-      INCL2[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      INCL2[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
-      if(ptbin == 0)
-	INCL2[ptbin][trig]->SetTitle("Inclusive Electrons (Weighted Hadron)");
-      else if (ptbin == 1 && trig !=3)
-	INCL2[ptbin][trig]->SetTitle(Form("HT%i",trig));
-      else if (trig == 3 && ptbin == 1)
-	INCL2[ptbin][trig]->SetTitle("MB");
-      else
-	INCL2[ptbin][trig]->SetTitle("");
-      INCL2[ptbin][trig]->Draw("");
-
-      IN2[trig]->Update();
       
-      // Subtraction of Inclusive - (US-LS) (unweighted)
+      // Subtraction of Inclusive - (US-LS)
       result[trig]->cd(ptbin+1);
       TH1F *SUB2 = (TH1F*)INCL[ptbin][trig]->Clone(); // Inclusive
       SUB2->SetName("");
@@ -474,33 +416,6 @@ void offline(const char* FileName="test")
       else
 	SUB2->SetTitle("");
       SUB2->Draw("");
-
-        // Subtraction of Inclusive - (US-LS) (weighted)
-      result2[trig]->cd(ptbin+1);
-      TH1F *SUB6 = (TH1F*)INCL2[ptbin][trig]->Clone(); //
-      TH1F *SUB7 = (TH1F*)SUB5->Clone();
-      SUB6->SetName("");      // Create SUB as a clone of USIM
-      SUB7->Sumw2(kFALSE); SUB7->Sumw2(kTRUE); // Lock errors before scaling
-      SUB7->Scale(1./epsilon[ptbin]); // Scale by reconstruction efficiency
-      SUB6->Add(SUB7,-1);
-      SUB6->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1)));
-      SUB6->SetLineColor(kBlack);
-      SUB6->SetLineWidth(1);
-      SUB6->SetFillStyle(3001);
-      SUB6->SetFillColor(kYellow);
-      SUB6->GetXaxis()->SetRangeUser(-2,5);
-      SUB6->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      SUB6->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
-      SUB6->GetYaxis()->SetTitleOffset(1.6);
-      if(ptbin == 0)
-	SUB6->SetTitle("Inclusive - Photonic/#epsilon (Weighted Hadron)");
-      else if (ptbin == 1 && trig !=3)
-	SUB6->SetTitle(Form("HT%i",trig));
-      else if (trig == 3 && ptbin == 1)
-	SUB6->SetTitle("MB");
-      else
-	SUB6->SetTitle("");
-      SUB6->Draw("");
     }
 
     // Make projections of hadron pt bins
@@ -545,8 +460,8 @@ void offline(const char* FileName="test")
 	projZDCx[ptbin][trig]->Draw("");
       }
   }
-
-  // inMass[0]->ls();
+  
+  // Draw on "SinglePlot" canvas for saving single plots from grid
   TPad* pNew = (TPad*)result[0]->GetPad(4)->Clone();
   singlePlot->cd();
   pNew->ResizePad();

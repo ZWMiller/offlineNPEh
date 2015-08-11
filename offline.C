@@ -8,6 +8,7 @@ void offline(const char* FileName="test")
    
   // Set Style parameters for this macro
   gStyle->SetOptTitle(1); // Show Title (off by default for cleanliness)
+  gErrorIgnoreLevel = kError; // Set Verbosity Level (kPrint shows all)
   Bool_t fPaintAll = kFALSE;
   Int_t number = 2;
   while(number > 1 || number < 0){
@@ -75,6 +76,9 @@ void offline(const char* FileName="test")
   const Int_t numPtBins = 14;
   const Int_t numTrigs = 4;
   Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
+  Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
+  Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
+  Float_t hptCut=0.5;
  // Reconstruction efficiency
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
@@ -99,13 +103,15 @@ void offline(const char* FileName="test")
   TH3F* mh3DelPhiPhotUS[numTrigs];
   TH3F* mh3DelPhiPhotUSNP[numTrigs];
   TH3F* mh3DelPhiPhotLSNP[numTrigs];
-  TH3F* mh3DelPhiPhotInclNP[numTrigs];
+  TH3F* mh3DelPhiInclNP[numTrigs];
   TH3F* mh3DelPhiInclWt[numTrigs];
   TH3F* mh3DelPhiPhotLSWt[numTrigs];
   TH3F* mh3DelPhiPhotUSWt[numTrigs];
   TH2F* mh2InvMassPtLS[numTrigs];
   TH2F* mh2InvMassPtUS[numTrigs];
   TH3F* mh3nTracksZdcx[numTrigs];
+  TH3F* mh3MixedDelPhi;
+  TH3F* mh3MixedDelEta;
   TH1D* projHPhi[numPtBins][numTrigs];
   TH1D* projnSigmaE[numPtBins][numTrigs];
   TH1D* projnSigmaE_eID[numPtBins][numTrigs];
@@ -114,12 +120,14 @@ void offline(const char* FileName="test")
   TH1D* projDelPhiPhotUS[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSNP[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLSNP[numPtBins][numTrigs];
-  TH1D* projDelPhiPhotInclNP[numPtBins][numTrigs];
+  TH1D* projDelPhiInclNP[numPtBins][numTrigs];
   TH1D* projDelPhiInclWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLSWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSWt[numPtBins][numTrigs];
   TH1D* projInvMassLS[numPtBins][numTrigs];
   TH1D* projInvMassUS[numPtBins][numTrigs];
+  TH1D* projMixedDelPhi;
+  TH1D* projMixedDelEta;
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
   TCanvas * IN[numTrigs];
@@ -131,8 +139,28 @@ void offline(const char* FileName="test")
   TCanvas * USComp[numTrigs];
   TCanvas * LSComp[numTrigs];
   TCanvas * InclComp[numTrigs];
+  TCanvas * mixedC;
   TCanvas * singlePlot;
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
+
+  // Trigger Independent Hists
+  mixedC = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
+  mixedC->Divide(2,1);
+  mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
+  mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
+  projMixedDelPhi = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
+  projMixedDelEta = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
+  
+  mixedC->cd(1);
+  projMixedDelPhi->GetXaxis()->SetRangeUser(-2,5);
+  projMixedDelPhi->GetXaxis()->SetTitle("#Delta#phi");
+  projMixedDelPhi->SetTitle("Mixed Event #Delta#phi");
+  projMixedDelPhi->Draw();
+  mixedC->cd(2);
+  projMixedDelEta->GetXaxis()->SetRangeUser(-2.5,2.5);
+  projMixedDelEta->GetXaxis()->SetTitle("#Delta#eta");
+  projMixedDelEta->SetTitle("Mixed Event #Delta#eta");
+  projMixedDelEta->Draw();
   
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
@@ -156,9 +184,6 @@ void offline(const char* FileName="test")
     InclComp[trig]->Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
-    Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
-    Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
-    Float_t hptCut=0.5;
     mh2PhiQPt[trig]    = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
     mh2nSigmaEPt[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
     mh2nSigmaEPt_eID[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
@@ -167,7 +192,7 @@ void offline(const char* FileName="test")
     mh3DelPhiPhotUS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
     mh3DelPhiPhotUSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSNP_%i",trig));
     mh3DelPhiPhotLSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSNP_%i",trig));
-    mh3DelPhiPhotInclNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotInclNP_%i",trig));
+    mh3DelPhiInclNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotInclNP_%i",trig));
     mh3DelPhiInclWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiInclWt_%i",trig));
     mh3DelPhiPhotLSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSWt_%i",trig));
     mh3DelPhiPhotUSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSWt_%i",trig));
@@ -185,7 +210,7 @@ void offline(const char* FileName="test")
 	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
-		projDelPhiPhotInclNP[ptbin][trig] = mh3DelPhiPhotInclNP[trig]->ProjectionX(Form("projDelPhiPhotInclNP_%i_%i",ptbin,trig),mh3DelPhiPhotInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotInclNP[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiInclNP[ptbin][trig] = mh3DelPhiInclNP[trig]->ProjectionX(Form("projDelPhiInclNP_%i_%i",ptbin,trig),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),-1);
@@ -212,7 +237,7 @@ void offline(const char* FileName="test")
       USIM[ptbin][trig]  = projDelPhiPhotUS[ptbin][trig];
       USIMNP[ptbin][trig]= projDelPhiPhotUSNP[ptbin][trig];
       LSIMNP[ptbin][trig]= projDelPhiPhotLSNP[ptbin][trig];
-      INCLNP[ptbin][trig]= projDelPhiPhotInclNP[ptbin][trig];
+      INCLNP[ptbin][trig]= projDelPhiInclNP[ptbin][trig];
       INCL[ptbin][trig]  = projDelPhiIncl[ptbin][trig];
       INCL2[ptbin][trig] = projDelPhiInclWt[ptbin][trig];
       LSIM2[ptbin][trig] = projDelPhiPhotLSWt[ptbin][trig];
@@ -220,7 +245,7 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       // Rebin all as necessary
-      Int_t RB = 8;
+      Int_t RB = 4;
       LSIM[ptbin][trig]  -> Rebin(RB);
       USIM[ptbin][trig]  -> Rebin(RB);
       USIMNP[ptbin][trig]-> Rebin(RB);
@@ -260,10 +285,10 @@ void offline(const char* FileName="test")
       SUB->SetFillStyle(3001);
       SUB->SetFillColor(kBlue);
       SUB->Draw("same");
-      TLegend* leg = new TLegend(0.55,0.65,0.8,0.75);
-      leg->AddEntry(USIMNP[ptbin][trig],"Unlike Sign","l");
-      leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "l");
-      leg->AddEntry(SUB,"Unlike - Like", "f");
+      TLegend* leg = new TLegend(0.2,0.73,0.55,0.85);
+      leg->AddEntry(USIMNP[ptbin][trig],"Unlike Sign","lpe");
+      leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "lpe");
+      leg->AddEntry(SUB,"Unlike - Like", "lpe");
       leg->Draw();
 
       // Plot different US (w/wo partner)
@@ -284,9 +309,9 @@ void offline(const char* FileName="test")
       TH1F *USnP = (TH1F*)USIMNP[ptbin][trig]->Clone();
       USnP->SetLineColor(kBlack);
       USnP->Draw("same");
-      TLegend* legUS = new TLegend(0.4,0.8,0.77,0.87);
-      legUS->AddEntry(USwP,"With Partner Track","l");
-      legUS->AddEntry(USnP,"Partner Track Removed", "l");
+      TLegend* legUS = new TLegend(0.35,0.8,0.77,0.87);
+      legUS->AddEntry(USwP,"With Partner Track","lpe");
+      legUS->AddEntry(USnP,"Partner Track Removed", "lpe");
       legUS->Draw();
 
       // Plot different LS (w/wo partner)
@@ -307,9 +332,9 @@ void offline(const char* FileName="test")
       TH1F *LSnP = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       LSnP->SetLineColor(kBlack);
       LSnP->Draw("same");
-      TLegend* legLS = new TLegend(0.4,0.8,0.77,0.87);
-      legLS->AddEntry(LSwP,"With Partner Track","l");
-      legLS->AddEntry(LSnP,"Partner Track Removed", "l");
+      TLegend* legLS = new TLegend(0.35,0.8,0.77,0.87);
+      legLS->AddEntry(LSwP,"With Partner Track","lpe");
+      legLS->AddEntry(LSnP,"Partner Track Removed", "lpe");
       legLS->Draw();
 
       // Plot different Incl (w/wo partner)
@@ -330,9 +355,9 @@ void offline(const char* FileName="test")
       TH1F *InclnP = (TH1F*)INCLNP[ptbin][trig]->Clone();
       InclnP->SetLineColor(kBlack);
       InclnP->Draw("same");
-      TLegend* legIncl = new TLegend(0.4,0.8,0.77,0.87);
-      legIncl->AddEntry(InclwP,"With Partner Track","l");
-      legIncl->AddEntry(InclnP,"Partner Track Removed", "l");
+      TLegend* legIncl = new TLegend(0.35,0.8,0.77,0.87);
+      legIncl->AddEntry(InclwP,"With Partner Track","lpe");
+      legIncl->AddEntry(InclnP,"Partner Track Removed", "lpe");
       legIncl->Draw();
 
       // Actually manipulate histos and plot (photonic InvMass)
@@ -364,10 +389,10 @@ void offline(const char* FileName="test")
       SUB4->SetFillStyle(3001);
       SUB4->SetFillColor(kBlue);
       SUB4->Draw("same");
-      TLegend* leg2 = new TLegend(0.55,0.65,0.8,0.75);
-      leg2->AddEntry(USMM[ptbin][trig],"Unlike Sign","l");
-      leg2->AddEntry(LSMM[ptbin][trig],"Like Sign", "l");
-      leg2->AddEntry(SUB4,"Unlike - Like", "f");
+      TLegend* leg2 = new TLegend(0.45,0.6,0.85,0.75);
+      leg2->AddEntry(USMM[ptbin][trig],"Unlike Sign","lpe");
+      leg2->AddEntry(LSMM[ptbin][trig],"Like Sign", "lpe");
+      leg2->AddEntry(SUB4,"Unlike - Like", "lpe");
       leg2->Draw();
 
        // Handle Inclusive Hists (unweigthed hads projection)
@@ -406,7 +431,7 @@ void offline(const char* FileName="test")
       SUB2->GetXaxis()->SetRangeUser(-2,5);
       SUB2->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       SUB2->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
-      SUB2->GetYaxis()->SetTitleOffset(1.6);
+      SUB2->GetYaxis()->SetTitleOffset(1.55);
       if(ptbin == 0)
 	SUB2->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
       else if (ptbin == 1 && trig !=3)
@@ -522,6 +547,8 @@ void offline(const char* FileName="test")
       temp->Print(name);
       sprintf(name, "%s.pdf", FileName);
       temp = fp; // print front page
+      temp->Print(name);
+      temp = mixedC;
       temp->Print(name);
       for(Int_t ii=0; ii<numTrigs; ii++)
 	{

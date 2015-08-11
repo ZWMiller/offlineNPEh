@@ -150,6 +150,9 @@ void offline(const char* FileName="test")
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
   projMixedDelPhi = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
   projMixedDelEta = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
+  Int_t RB2 = 4;
+  projMixedDelPhi->Rebin(RB2);
+  projMixedDelEta->Rebin(RB2);
   
   mixedC->cd(1);
   projMixedDelPhi->GetXaxis()->SetRangeUser(-2,5);
@@ -422,7 +425,7 @@ void offline(const char* FileName="test")
       SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
       SUB3->Scale((1./epsilon[ptbin])-1.); // Scale by (1/eps - 1)
       SUB2->Add(SUB3,-1); // Subtract the scaled (USNP - LSNP)
-      SUB2->Add(LSIM[ptbin][trig]); // Add back LS w/Partner
+      SUB2->Add(LSIMNP[ptbin][trig]); // Add back LS w/Partner
       SUB2->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1))); // Normalize to triggers.
       SUB2->SetLineColor(kBlack);
       SUB2->SetLineWidth(1);
@@ -487,7 +490,7 @@ void offline(const char* FileName="test")
   }
   
   // Draw on "SinglePlot" canvas for saving single plots from grid
-  TPad* pNew = (TPad*)result[0]->GetPad(4)->Clone();
+  TPad* pNew = (TPad*)result[0]->GetPad(6)->Clone();
   singlePlot->cd();
   pNew->ResizePad();
   pNew->Draw();  

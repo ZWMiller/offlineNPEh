@@ -112,6 +112,7 @@ void offline(const char* FileName="test")
   TH3F* mh3nTracksZdcx[numTrigs];
   TH3F* mh3MixedDelPhi;
   TH3F* mh3MixedDelEta;
+  TH3F* mh3MixedEtaPhi;
   TH1D* projHPhi[numPtBins][numTrigs];
   TH1D* projnSigmaE[numPtBins][numTrigs];
   TH1D* projnSigmaE_eID[numPtBins][numTrigs];
@@ -128,6 +129,9 @@ void offline(const char* FileName="test")
   TH1D* projInvMassUS[numPtBins][numTrigs];
   TH1D* projMixedDelPhi;
   TH1D* projMixedDelEta;
+  TH1D* projEMixedEtaPhi;
+  TH1D* projPMixedEtaPhi;
+  TH2D* proj2DMixedEtaPhi;
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
   TCanvas * IN[numTrigs];
@@ -145,26 +149,46 @@ void offline(const char* FileName="test")
 
   // Trigger Independent Hists
   mixedC = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
-  mixedC->Divide(2,1);
+  mixedC->Divide(2,2);
   mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
-  projMixedDelPhi = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
-  projMixedDelEta = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
+  //mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
+  // ONLY FOR AUG12_1 due to ERROR REMOVE FOR ALL OTHER RUNS
+  mh3MixedEtaPhi = mh3MixedDelEta;
+  ///////////////////////////
+  projMixedDelPhi   = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
+  projMixedDelEta   = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
+  projPMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionX("projPMixedEtaPhi");
+  projEMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionY("projEMixedEtaPhi");
+  proj2DMixedEtaPhi = (TH2D*)mh3MixedEtaPhi -> Project3D("yx");
   Int_t RB2 = 4;
   projMixedDelPhi->Rebin(RB2);
   projMixedDelEta->Rebin(RB2);
+  projEMixedEtaPhi->Rebin(RB2);
+  projPMixedEtaPhi->Rebin(RB2);
   
   mixedC->cd(1);
-  projMixedDelPhi->GetXaxis()->SetRangeUser(-2,5);
-  projMixedDelPhi->GetXaxis()->SetTitle("#Delta#phi");
-  projMixedDelPhi->SetTitle("Mixed Event #Delta#phi");
-  projMixedDelPhi->Draw();
+  mh3MixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
+  mh3MixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
+  mh3MixedEtaPhi->GetZaxis()->SetTitle("P_{t,e}");
+  mh3MixedEtaPhi->Draw();
   mixedC->cd(2);
-  projMixedDelEta->GetXaxis()->SetRangeUser(-2.5,2.5);
-  projMixedDelEta->GetXaxis()->SetTitle("#Delta#eta");
-  projMixedDelEta->SetTitle("Mixed Event #Delta#eta");
-  projMixedDelEta->Draw();
-  
+  projPMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
+  projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
+  projPMixedEtaPhi->SetTitle("Mixed Event #Delta#phi");
+  projPMixedEtaPhi->Draw();
+  mixedC->cd(3);
+  projEMixedEtaPhi->GetXaxis()->SetRangeUser(-2.5,2.5);
+  projEMixedEtaPhi->GetXaxis()->SetTitle("#Delta#eta");
+  projEMixedEtaPhi->SetTitle("Mixed Event #Delta#eta");
+  projEMixedEtaPhi->Draw();
+  mixedC->cd(4);
+  proj2DMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
+  proj2DMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
+  proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
+  proj2DMixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
+  proj2DMixedEtaPhi->Draw("CONT1");
+ 
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
@@ -359,8 +383,8 @@ void offline(const char* FileName="test")
       InclnP->SetLineColor(kBlack);
       InclnP->Draw("same");
       TLegend* legIncl = new TLegend(0.35,0.8,0.77,0.87);
-      legIncl->AddEntry(InclwP,"With Partner Track","lpe");
-      legIncl->AddEntry(InclnP,"Partner Track Removed", "lpe");
+      legIncl->AddEntry(InclwP,"Inclusive","lpe");
+      legIncl->AddEntry(InclnP,"Semi-Inclusive", "lpe");
       legIncl->Draw();
 
       // Actually manipulate histos and plot (photonic InvMass)
@@ -418,10 +442,10 @@ void offline(const char* FileName="test")
       
       // Subtraction of Inclusive - (US-LS)
       result[trig]->cd(ptbin+1);
-      TH1F *SUB2 = (TH1F*)INCL[ptbin][trig]->Clone(); // Inclusive
+      TH1F *SUB2 = (TH1F*)INCLNP[ptbin][trig]->Clone(); // Inclusive
       SUB2->SetName("");
       TH1F *SUB3 = (TH1F*)SUB->Clone(); //(USNP - LSNP)
-      SUB2->Add(USIMNP[ptbin][trig],-1); // Inclusive - US w/Partner 
+      //SUB2->Add(USIMNP[ptbin][trig],-1); // Inclusive - US w/Partner 
       SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
       SUB3->Scale((1./epsilon[ptbin])-1.); // Scale by (1/eps - 1)
       SUB2->Add(SUB3,-1); // Subtract the scaled (USNP - LSNP)
@@ -490,7 +514,7 @@ void offline(const char* FileName="test")
   }
   
   // Draw on "SinglePlot" canvas for saving single plots from grid
-  TPad* pNew = (TPad*)result[0]->GetPad(6)->Clone();
+  TPad* pNew = (TPad*)InclComp[0]->GetPad(4)->Clone();
   singlePlot->cd();
   pNew->ResizePad();
   pNew->Draw();  

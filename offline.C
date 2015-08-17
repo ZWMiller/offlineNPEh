@@ -145,6 +145,8 @@ void offline(const char* FileName="test")
   TCanvas * InclComp[numTrigs];
   TCanvas * mixedC;
   TCanvas * singlePlot;
+  TPaveText* lbl[numPtBins];
+  char textLabel[100];
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
 
   // Trigger Independent Hists
@@ -169,7 +171,9 @@ void offline(const char* FileName="test")
   
   mixedC->cd(1);
   mh3MixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
+  mh3MixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
   mh3MixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
+  mh3MixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   mh3MixedEtaPhi->GetZaxis()->SetTitle("P_{t,e}");
   mh3MixedEtaPhi->Draw();
   mixedC->cd(2);
@@ -183,11 +187,12 @@ void offline(const char* FileName="test")
   projEMixedEtaPhi->SetTitle("Mixed Event #Delta#eta");
   projEMixedEtaPhi->Draw();
   mixedC->cd(4);
+  mixedC->SetLogz();
   proj2DMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
   proj2DMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
   proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
   proj2DMixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
-  proj2DMixedEtaPhi->Draw("CONT1");
+  proj2DMixedEtaPhi->Draw("colz");
  
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
@@ -250,6 +255,12 @@ void offline(const char* FileName="test")
     
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
 
+      // Init necessary plotting tools
+      lbl[ptbin] = new TPaveText(.2,.8,.5,.85,Form("NB NDC%i",ptbin));
+      sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
+      lbl[ptbin]->AddText(textLabel);
+      lbl[ptbin]->SetFillColor(kWhite);
+      
       Int_t inclNorm = projnSigmaE_eID[ptbin][trig]->GetEntries();
       Int_t LSNorm   = projInvMassLS[ptbin][trig]->GetEntries();
       Int_t USNorm   = projInvMassUS[ptbin][trig]->GetEntries();
@@ -302,7 +313,8 @@ void offline(const char* FileName="test")
       LSIMNP[ptbin][trig]->SetLineColor(kBlack);
       LSIMNP[ptbin][trig]->SetLineWidth(1);
       LSIMNP[ptbin][trig]->Draw(" same");
-
+      lbl[ptbin]->Draw("same");
+      
       // Subtraction of (USNP-LS)
       TH1F *SUB = (TH1F*)USIMNP[ptbin][trig]->Clone(); //
       SUB->SetName("Subtraction");      // Create SUB as a clone of USIMNP
@@ -312,6 +324,7 @@ void offline(const char* FileName="test")
       SUB->SetFillStyle(3001);
       SUB->SetFillColor(kBlue);
       SUB->Draw("same");
+      lbl[ptbin]->Draw("same");
       TLegend* leg = new TLegend(0.2,0.73,0.55,0.85);
       leg->AddEntry(USIMNP[ptbin][trig],"Unlike Sign","lpe");
       leg->AddEntry(LSIM[ptbin][trig],"Like Sign", "lpe");
@@ -336,6 +349,7 @@ void offline(const char* FileName="test")
       TH1F *USnP = (TH1F*)USIMNP[ptbin][trig]->Clone();
       USnP->SetLineColor(kBlack);
       USnP->Draw("same");
+      lbl[ptbin]->Draw("same");
       TLegend* legUS = new TLegend(0.35,0.8,0.77,0.87);
       legUS->AddEntry(USwP,"With Partner Track","lpe");
       legUS->AddEntry(USnP,"Partner Track Removed", "lpe");
@@ -359,6 +373,7 @@ void offline(const char* FileName="test")
       TH1F *LSnP = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       LSnP->SetLineColor(kBlack);
       LSnP->Draw("same");
+      lbl[ptbin]->Draw("same");
       TLegend* legLS = new TLegend(0.35,0.8,0.77,0.87);
       legLS->AddEntry(LSwP,"With Partner Track","lpe");
       legLS->AddEntry(LSnP,"Partner Track Removed", "lpe");
@@ -382,6 +397,7 @@ void offline(const char* FileName="test")
       TH1F *InclnP = (TH1F*)INCLNP[ptbin][trig]->Clone();
       InclnP->SetLineColor(kBlack);
       InclnP->Draw("same");
+      lbl[ptbin]->Draw("same");
       TLegend* legIncl = new TLegend(0.35,0.8,0.77,0.87);
       legIncl->AddEntry(InclwP,"Inclusive","lpe");
       legIncl->AddEntry(InclnP,"Semi-Inclusive", "lpe");
@@ -406,6 +422,7 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]->SetLineColor(kBlack);
       LSMM[ptbin][trig]->SetLineWidth(1);
       LSMM[ptbin][trig]->Draw("same");
+      lbl[ptbin]->Draw("same");
 
       // Subtraction of (US-LS)
       TH1F *SUB4 = (TH1F*)USMM[ptbin][trig]->Clone(); //
@@ -437,6 +454,7 @@ void offline(const char* FileName="test")
       else
 	INCL[ptbin][trig]->SetTitle("");
       INCL[ptbin][trig]->Draw("");
+      lbl[ptbin]->Draw("same");
 
       IN[trig]->Update();
       
@@ -468,6 +486,7 @@ void offline(const char* FileName="test")
       else
 	SUB2->SetTitle("");
       SUB2->Draw("");
+      lbl[ptbin]->Draw("same");
     }
 
     // Make projections of hadron pt bins

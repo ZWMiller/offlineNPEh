@@ -154,9 +154,9 @@ void offline(const char* FileName="test")
   mixedC->Divide(2,2);
   mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
-  //mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
+  mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
   // ONLY FOR AUG12_1 due to ERROR REMOVE FOR ALL OTHER RUNS
-  mh3MixedEtaPhi = mh3MixedDelEta;
+  //mh3MixedEtaPhi = mh3MixedDelEta;
   ///////////////////////////
   projMixedDelPhi   = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
   projMixedDelEta   = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
@@ -187,7 +187,7 @@ void offline(const char* FileName="test")
   projEMixedEtaPhi->SetTitle("Mixed Event #Delta#eta");
   projEMixedEtaPhi->Draw();
   mixedC->cd(4);
-  mixedC->SetLogz();
+  mixedC->SetLogz(1);
   proj2DMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
   proj2DMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
   proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");

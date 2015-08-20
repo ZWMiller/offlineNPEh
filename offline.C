@@ -91,6 +91,7 @@ void offline(const char* FileName="test")
   TH1D * INCL2[numPtBins][numTrigs];
   TH1D * LSMM[numPtBins][numTrigs];
   TH1D * USMM[numPtBins][numTrigs];
+  TH1D * HHDP[numPtBins][numTrigs];
   TH2F * MON[numTrigs];
   TH1F * AVGTRKS[numTrigs];
   TH2F * MON2[numTrigs];
@@ -113,6 +114,8 @@ void offline(const char* FileName="test")
   TH3F* mh3MixedDelPhi;
   TH3F* mh3MixedDelEta;
   TH3F* mh3MixedEtaPhi;
+  TH3F* mh3DelPhiHadHad[numTrigs];
+  TH1F* mh1PtHadTracks[numTrigs];
   TH1D* projHPhi[numPtBins][numTrigs];
   TH1D* projnSigmaE[numPtBins][numTrigs];
   TH1D* projnSigmaE_eID[numPtBins][numTrigs];
@@ -125,6 +128,7 @@ void offline(const char* FileName="test")
   TH1D* projDelPhiInclWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotLSWt[numPtBins][numTrigs];
   TH1D* projDelPhiPhotUSWt[numPtBins][numTrigs];
+  TH1D* projDelPhiHadHad[numPtBins][numTrigs];
   TH1D* projInvMassLS[numPtBins][numTrigs];
   TH1D* projInvMassUS[numPtBins][numTrigs];
   TH1D* projMixedDelPhi;
@@ -143,6 +147,7 @@ void offline(const char* FileName="test")
   TCanvas * USComp[numTrigs];
   TCanvas * LSComp[numTrigs];
   TCanvas * InclComp[numTrigs];
+  TCanvas * cHH[numTrigs];
   TCanvas * mixedC;
   TCanvas * singlePlot;
   TPaveText* lbl[numPtBins];
@@ -206,6 +211,7 @@ void offline(const char* FileName="test")
     USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
     LSComp[trig] = new TCanvas(Form("LSComp%i",trig),"Like Sign Distributions",150,0,1150,1000);
     InclComp[trig] = new TCanvas(Form("InclComp%i",trig),"Inclusive Distributions",150,0,1150,1000);
+    cHH[trig] = new TCanvas(Form("cHH%i",trig),"Hadron-Hadron Distributions",150,0,1150,1000);
     c[trig] -> Divide(4,3);
     inMass[trig]->Divide(4,3);
     IN[trig]-> Divide(4,3);
@@ -214,22 +220,25 @@ void offline(const char* FileName="test")
     USComp[trig]->Divide(4,3);
     LSComp[trig]->Divide(4,3);
     InclComp[trig]->Divide(4,3);
+    cHH[trig] -> Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
-    mh2PhiQPt[trig]    = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
-    mh2nSigmaEPt[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
-    mh2nSigmaEPt_eID[trig] = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
-    mh3DelPhiIncl[trig] = (TH3F*)f->Get(Form("mh3DelPhiIncl_%i",trig));
-    mh3DelPhiPhotLS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
-    mh3DelPhiPhotUS[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
+    mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
+    mh2nSigmaEPt[trig]      = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
+    mh2nSigmaEPt_eID[trig]  = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
+    mh3DelPhiIncl[trig]     = (TH3F*)f->Get(Form("mh3DelPhiIncl_%i",trig));
+    mh3DelPhiPhotLS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
+    mh3DelPhiPhotUS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
     mh3DelPhiPhotUSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSNP_%i",trig));
     mh3DelPhiPhotLSNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSNP_%i",trig));
-    mh3DelPhiInclNP[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotInclNP_%i",trig));
-    mh3DelPhiInclWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiInclWt_%i",trig));
+    mh3DelPhiInclNP[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotInclNP_%i",trig));
+    mh3DelPhiInclWt[trig]   = (TH3F*)f->Get(Form("mh3DelPhiInclWt_%i",trig));
     mh3DelPhiPhotLSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotLSWt_%i",trig));
     mh3DelPhiPhotUSWt[trig] = (TH3F*)f->Get(Form("mh3DelPhiPhotUSWt_%i",trig));
-    mh2InvMassPtLS[trig] = (TH2F*)f->Get(Form("mh2InvMassPtLS_%i",trig));
-    mh2InvMassPtUS[trig] = (TH2F*)f->Get(Form("mh2InvMassPtUS_%i",trig));
+    mh2InvMassPtLS[trig]    = (TH2F*)f->Get(Form("mh2InvMassPtLS_%i",trig));
+    mh2InvMassPtUS[trig]    = (TH2F*)f->Get(Form("mh2InvMassPtUS_%i",trig));
+    mh3DelPhiHadHad[trig]   = (TH3F*)f->Get(Form("mh3DelPhiHadHad_%i",trig));
+    mh1PtHadTracks[trig]    = (TH1F*)f->Get(Form("mh1PtHadTracks_%i",trig));
    
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
       {
@@ -250,7 +259,7 @@ void offline(const char* FileName="test")
 	projDelPhiPhotLSWt[ptbin][trig] = mh3DelPhiPhotLSWt[trig]->ProjectionX(Form("projDelPhiPhotLSWt_%i_%i",ptbin,trig),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetZaxis()->FindBin(hptCut),-1);
 	projInvMassUS[ptbin][trig] = mh2InvMassPtUS[trig]->ProjectionX(Form("projInvMassUS_%i_%i",ptbin,trig),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projInvMassLS[ptbin][trig] = mh2InvMassPtLS[trig]->ProjectionX(Form("projInvMassLS_%i_%i",ptbin,trig),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
-	  
+	projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),-1);
       }
     
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
@@ -264,6 +273,7 @@ void offline(const char* FileName="test")
       Int_t inclNorm = projnSigmaE_eID[ptbin][trig]->GetEntries();
       Int_t LSNorm   = projInvMassLS[ptbin][trig]->GetEntries();
       Int_t USNorm   = projInvMassUS[ptbin][trig]->GetEntries();
+      Int_t hhNorm   = mh1PtHadTracks[trig]->Integral(lowpt[ptbin],highpt[ptbin]);
 
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin])*((Float_t)USNorm - (Float_t)LSNorm); // Use the number of "signal" counts
 
@@ -282,6 +292,7 @@ void offline(const char* FileName="test")
       USIM2[ptbin][trig] = projDelPhiPhotUSWt[ptbin][trig];
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
+      HHDP[ptbin][trig]  = projDelPhiHadHad[ptbin][trig];
       // Rebin all as necessary
       Int_t RB = 4;
       LSIM[ptbin][trig]  -> Rebin(RB);
@@ -439,7 +450,7 @@ void offline(const char* FileName="test")
       leg2->AddEntry(SUB4,"Unlike - Like", "lpe");
       leg2->Draw();
 
-       // Handle Inclusive Hists (unweigthed hads projection)
+       // Handle Inclusive Hists
       IN[trig]->cd(ptbin+1);
       INCL[ptbin][trig]->SetLineColor(kBlue);
       INCL[ptbin][trig]->SetLineWidth(1);
@@ -457,6 +468,24 @@ void offline(const char* FileName="test")
       lbl[ptbin]->Draw("same");
 
       IN[trig]->Update();
+
+      // Plot Had-Had correlations
+      cHH[trig]->cd(ptbin+1);
+      HHDP[ptbin][trig]->SetLineColor(kOrange);
+      HHDP[ptbin][trig]->SetLineWidth(1);
+      HHDP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      HHDP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
+      if(ptbin == 0)
+	HHDP[ptbin][trig]->SetTitle("Hadron-Hadron Correlations");
+      else if (ptbin == 1 && trig !=3)
+	HHDP[ptbin][trig]->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	HHDP[ptbin][trig]->SetTitle("MB");
+      else
+	HHDP[ptbin][trig]->SetTitle("");
+      HHDP[ptbin][trig]->Draw("");
+      lbl[ptbin]->Draw("same");
+      
       
       // Subtraction of Inclusive - (US-LS)
       result[trig]->cd(ptbin+1);
@@ -603,6 +632,8 @@ void offline(const char* FileName="test")
 	  temp = IN[ii];
 	  temp->Print(name);
 	  temp = c[ii];
+	  temp->Print(name);
+	  temp = cHH[ii];
 	  temp->Print(name);
 	  temp = result[ii];
 	  temp->Print(name);

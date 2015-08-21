@@ -73,9 +73,9 @@ void offline(const char* FileName="test")
   // f->ls(); // - DEBUG by printing all objects in ROOT file
   
 
-  const Int_t numPtBins = 14;
+  const Int_t numPtBins = 13;
   const Int_t numTrigs = 4;
-  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
+  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323};//, 0.758423};
   Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
   Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
   Float_t hptCut=0.5;
@@ -269,13 +269,22 @@ void offline(const char* FileName="test")
       sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
       lbl[ptbin]->AddText(textLabel);
       lbl[ptbin]->SetFillColor(kWhite);
+
+      // Calculate electron purity from pol3 fit of xiaozhi data
+      Float_t ptAv = (lowpt[ptbin]+highpt[ptbin])/2.;
+      Float_t p[3] = {0.9743, 0.02128, -0.00438};
+      Float_t purity = p[0] + (p[1]*ptAv)+(p[2]*ptAv*ptAv);
+      Float_t hadPur = 1-purity;
       
+      // Calculate Normalization for NPE delPhi
       Int_t inclNorm = projnSigmaE_eID[ptbin][trig]->GetEntries();
       Int_t LSNorm   = projInvMassLS[ptbin][trig]->GetEntries();
       Int_t USNorm   = projInvMassUS[ptbin][trig]->GetEntries();
-      Int_t hhNorm   = mh1PtHadTracks[trig]->Integral(lowpt[ptbin],highpt[ptbin]);
+      Int_t hhNorm   = mh1PtHadTracks[trig]->Integral(mh1PtHadTracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtHadTracks[trig]->GetXaxis()->FindBin(highpt[ptbin]));
+      Double_t HHScale = (Float_t)inclNorm/(Float_t)hhNorm; // so the purity comparison is 1:1
+      Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
 
-      Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin])*((Float_t)USNorm - (Float_t)LSNorm); // Use the number of "signal" counts
+      cout << "Purity: " << purity << " pt: " << ptAv << " HHScale: " << HHScale << endl;
 
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
@@ -294,7 +303,7 @@ void offline(const char* FileName="test")
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       HHDP[ptbin][trig]  = projDelPhiHadHad[ptbin][trig];
       // Rebin all as necessary
-      Int_t RB = 4;
+      Int_t RB = 2;
       LSIM[ptbin][trig]  -> Rebin(RB);
       USIM[ptbin][trig]  -> Rebin(RB);
       USIMNP[ptbin][trig]-> Rebin(RB);
@@ -304,6 +313,7 @@ void offline(const char* FileName="test")
       INCL2[ptbin][trig] -> Rebin(RB);
       LSIM2[ptbin][trig] -> Rebin(RB);
       USIM2[ptbin][trig] -> Rebin(RB);
+      HHDP[ptbin][trig]  -> Rebin(RB);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -471,7 +481,7 @@ void offline(const char* FileName="test")
 
       // Plot Had-Had correlations
       cHH[trig]->cd(ptbin+1);
-      HHDP[ptbin][trig]->SetLineColor(kOrange);
+      HHDP[ptbin][trig]->SetLineColor(kGreen+3);
       HHDP[ptbin][trig]->SetLineWidth(1);
       HHDP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       HHDP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
@@ -487,34 +497,36 @@ void offline(const char* FileName="test")
       lbl[ptbin]->Draw("same");
       
       
-      // Subtraction of Inclusive - (US-LS)
+      // Subtraction of Inclusive - (1/e - 1)US + (1/e)LS - (1-purity)HadHad
       result[trig]->cd(ptbin+1);
-      TH1F *SUB2 = (TH1F*)INCLNP[ptbin][trig]->Clone(); // Inclusive
-      SUB2->SetName("");
-      TH1F *SUB3 = (TH1F*)SUB->Clone(); //(USNP - LSNP)
-      //SUB2->Add(USIMNP[ptbin][trig],-1); // Inclusive - US w/Partner 
-      SUB3->Sumw2(kFALSE); SUB3->Sumw2(kTRUE); // Lock errors before scaling
-      SUB3->Scale((1./epsilon[ptbin])-1.); // Scale by (1/eps - 1)
-      SUB2->Add(SUB3,-1); // Subtract the scaled (USNP - LSNP)
-      SUB2->Add(LSIMNP[ptbin][trig]); // Add back LS w/Partner
-      SUB2->Scale(1./((Double_t)Norm*SUB2->GetBinWidth(1))); // Normalize to triggers.
-      SUB2->SetLineColor(kBlack);
-      SUB2->SetLineWidth(1);
-      SUB2->SetFillStyle(3001);
-      SUB2->SetFillColor(kYellow);
-      SUB2->GetXaxis()->SetRangeUser(-2,5);
-      SUB2->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      SUB2->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
-      SUB2->GetYaxis()->SetTitleOffset(1.55);
+      TH1F *INCDP = (TH1F*)INCLNP[ptbin][trig]->Clone();
+      TH1F *ULDP  = (TH1F*)USIMNP[ptbin][trig]->Clone();
+      TH1F *LSDP  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
+      TH1F *HADDP = (TH1F*)HHDP[ptbin][trig]->Clone();
+      ULDP->Scale(1./epsilon[ptbin] - 1.); // Scale each distribution by associated factors
+      LSDP->Scale(1./epsilon[ptbin]);
+      HADDP->Scale(HHScale*hadPur);
+      INCDP->Add(ULDP,-1);
+      INCDP->Add(LSDP,1);
+      INCDP->Add(HADDP,-1);
+      INCDP->Scale(1./((Double_t)Norm*INCDP->GetBinWidth(1))); // Normalize to triggers.
+      INCDP->SetLineColor(kBlack);
+      INCDP->SetLineWidth(1);
+      INCDP->SetFillStyle(3001);
+      INCDP->SetFillColor(kYellow);
+      INCDP->GetXaxis()->SetRangeUser(-2,5);
+      INCDP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      INCDP->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
+      INCDP->GetYaxis()->SetTitleOffset(1.55);
       if(ptbin == 0)
-	SUB2->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
+	INCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
       else if (ptbin == 1 && trig !=3)
-	SUB2->SetTitle(Form("HT%i",trig));
+	INCDP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	SUB2->SetTitle("MB");
+	INCDP->SetTitle("MB");
       else
-	SUB2->SetTitle("");
-      SUB2->Draw("");
+	INCDP->SetTitle("");
+      INCDP->Draw("");
       lbl[ptbin]->Draw("same");
     }
 

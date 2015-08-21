@@ -92,6 +92,7 @@ void offline(const char* FileName="test")
   TH1D * LSMM[numPtBins][numTrigs];
   TH1D * USMM[numPtBins][numTrigs];
   TH1D * HHDP[numPtBins][numTrigs];
+  TH1D * NSPI[numPtBins][numTrigs];
   TH2F * MON[numTrigs];
   TH1F * AVGTRKS[numTrigs];
   TH2F * MON2[numTrigs];
@@ -115,6 +116,7 @@ void offline(const char* FileName="test")
   TH3F* mh3MixedDelEta;
   TH3F* mh3MixedEtaPhi;
   TH3F* mh3DelPhiHadHad[numTrigs];
+  TH2F* mh2nSigmaPion[numTrigs];
   TH1F* mh1PtHadTracks[numTrigs];
   TH1D* projHPhi[numPtBins][numTrigs];
   TH1D* projnSigmaE[numPtBins][numTrigs];
@@ -131,6 +133,7 @@ void offline(const char* FileName="test")
   TH1D* projDelPhiHadHad[numPtBins][numTrigs];
   TH1D* projInvMassLS[numPtBins][numTrigs];
   TH1D* projInvMassUS[numPtBins][numTrigs];
+  TH1D* projnSigmaPion[numPtBins][numTrigs];
   TH1D* projMixedDelPhi;
   TH1D* projMixedDelEta;
   TH1D* projEMixedEtaPhi;
@@ -148,6 +151,7 @@ void offline(const char* FileName="test")
   TCanvas * LSComp[numTrigs];
   TCanvas * InclComp[numTrigs];
   TCanvas * cHH[numTrigs];
+  TCanvas * nSigPi[numTrigs];
   TCanvas * mixedC;
   TCanvas * singlePlot;
   TPaveText* lbl[numPtBins];
@@ -203,24 +207,26 @@ void offline(const char* FileName="test")
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
     // Create and Segment Canvas
-    c[trig] = new TCanvas(Form("c%i",trig),"Photonic Hists",150,0,1150,1000);
-    IN[trig]= new TCanvas(Form("IN%i",trig),"Inclusive Hists",150,0,1150,1000);
-    pile[trig] = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
-    inMass[trig] = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
-    result[trig] = new TCanvas(Form("result%i",trig),"Inclusive - Photonic",150,0,1150,1000);
-    USComp[trig] = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
-    LSComp[trig] = new TCanvas(Form("LSComp%i",trig),"Like Sign Distributions",150,0,1150,1000);
+    c[trig]        = new TCanvas(Form("c%i",trig),"Photonic Hists",150,0,1150,1000);
+    IN[trig]       = new TCanvas(Form("IN%i",trig),"Inclusive Hists",150,0,1150,1000);
+    pile[trig]     = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
+    inMass[trig]   = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
+    result[trig]   = new TCanvas(Form("result%i",trig),"Inclusive - Photonic",150,0,1150,1000);
+    USComp[trig]   = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
+    LSComp[trig]   = new TCanvas(Form("LSComp%i",trig),"Like Sign Distributions",150,0,1150,1000);
     InclComp[trig] = new TCanvas(Form("InclComp%i",trig),"Inclusive Distributions",150,0,1150,1000);
-    cHH[trig] = new TCanvas(Form("cHH%i",trig),"Hadron-Hadron Distributions",150,0,1150,1000);
-    c[trig] -> Divide(4,3);
-    inMass[trig]->Divide(4,3);
-    IN[trig]-> Divide(4,3);
-    pile[trig]->Divide(2,2);
-    result[trig]->Divide(4,3);
-    USComp[trig]->Divide(4,3);
-    LSComp[trig]->Divide(4,3);
-    InclComp[trig]->Divide(4,3);
-    cHH[trig] -> Divide(4,3);
+    cHH[trig]      = new TCanvas(Form("cHH%i",trig),"Hadron-Hadron Distributions",150,0,1150,1000);
+    nSigPi[trig]   = new TCanvas(Form("nSigPi_%i",trig),"n#sigma#pi QA",150,0,1150,1000);
+    c[trig]        -> Divide(4,3);
+    inMass[trig]   -> Divide(4,3);
+    IN[trig]       -> Divide(4,3);
+    pile[trig]     -> Divide(2,2);
+    result[trig]   -> Divide(4,3);
+    USComp[trig]   -> Divide(4,3);
+    LSComp[trig]   -> Divide(4,3);
+    InclComp[trig] -> Divide(4,3);
+    cHH[trig]      -> Divide(4,3);
+    nSigPi[trig]   -> Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
     mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
@@ -239,6 +245,7 @@ void offline(const char* FileName="test")
     mh2InvMassPtUS[trig]    = (TH2F*)f->Get(Form("mh2InvMassPtUS_%i",trig));
     mh3DelPhiHadHad[trig]   = (TH3F*)f->Get(Form("mh3DelPhiHadHad_%i",trig));
     mh1PtHadTracks[trig]    = (TH1F*)f->Get(Form("mh1PtHadTracks_%i",trig));
+    mh2nSigmaPion[trig]     = (TH2F*)f->Get(Form("mh2nSigmaPionPt_%i",trig));
    
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
       {
@@ -260,6 +267,7 @@ void offline(const char* FileName="test")
 	projInvMassUS[ptbin][trig] = mh2InvMassPtUS[trig]->ProjectionX(Form("projInvMassUS_%i_%i",ptbin,trig),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projInvMassLS[ptbin][trig] = mh2InvMassPtLS[trig]->ProjectionX(Form("projInvMassLS_%i_%i",ptbin,trig),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projnSigmaPion[ptbin][trig] = mh2nSigmaPion[trig]->ProjectionX(Form("projnSigmaPion_%i_%i",ptbin,trig),mh2nSigmaPion[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaPion[trig]->GetYaxis()->FindBin(highpt[ptbin]));
       }
     
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
@@ -302,6 +310,7 @@ void offline(const char* FileName="test")
       LSMM[ptbin][trig]  = projInvMassLS[ptbin][trig];
       USMM[ptbin][trig]  = projInvMassUS[ptbin][trig];
       HHDP[ptbin][trig]  = projDelPhiHadHad[ptbin][trig];
+      NSPI[ptbin][trig]  = projnSigmaPion[ptbin][trig];
       // Rebin all as necessary
       Int_t RB = 2;
       LSIM[ptbin][trig]  -> Rebin(RB);
@@ -314,6 +323,7 @@ void offline(const char* FileName="test")
       LSIM2[ptbin][trig] -> Rebin(RB);
       USIM2[ptbin][trig] -> Rebin(RB);
       HHDP[ptbin][trig]  -> Rebin(RB);
+      NSPI[ptbin][trig]  -> Rebin(4);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -528,6 +538,23 @@ void offline(const char* FileName="test")
 	INCDP->SetTitle("");
       INCDP->Draw("");
       lbl[ptbin]->Draw("same");
+
+      // nSigmaPion QA
+      nSigPi[trig]->cd(ptbin+1);
+      NSPI[ptbin][trig]->SetLineColor(kGreen+3);
+      NSPI[ptbin][trig]->SetLineWidth(1);
+      NSPI[ptbin][trig]->GetXaxis()->SetTitle("n#sigma_{#pi}");
+      if(ptbin == 0)
+	NSPI[ptbin][trig]->SetTitle("n Sigma Pion (n#sigma_{#pi})");
+      else if (ptbin == 1 && trig !=3)
+	NSPI[ptbin][trig]->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	NSPI[ptbin][trig]->SetTitle("MB");
+      else
+	NSPI[ptbin][trig]->SetTitle("");
+      NSPI[ptbin][trig]->Draw("");
+      lbl[ptbin]->Draw("same");
+      
     }
 
     // Make projections of hadron pt bins
@@ -649,13 +676,7 @@ void offline(const char* FileName="test")
 	  temp->Print(name);
 	  temp = result[ii];
 	  temp->Print(name);
-	  /* temp = IN2[ii];
-	  temp->Print(name);
-	  temp = c2[ii];
-	  temp->Print(name);
-	  temp = result2[ii];
-	  temp->Print(name);*/
-	  temp = pile[ii];
+	  /*temp = pile[ii];
 	  temp->Print(name);
 	  temp = inMass[ii];
 	  temp->Print(name);
@@ -664,6 +685,8 @@ void offline(const char* FileName="test")
 	  temp = LSComp[ii];
 	  temp->Print(name);
 	  temp = InclComp[ii];
+	  temp->Print(name);*/
+	  temp = nSigPi[ii];
 	  temp->Print(name);
 	  
 	}

@@ -62,6 +62,25 @@ void offline(const char* FileName="test")
     else
       number = 1; 
   }
+
+      // Set option for .root creation
+  number = 2; Bool_t makeROOT = kTRUE;
+  while(number > 1 || number < 0){
+    std::cout << "Make .root? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ){
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	makeROOT = kFALSE;
+      if(number == 1){
+	makeROOT = kTRUE;
+      }
+    }
+    else
+      number = 1; 
+  }
   
   // Open ROOT File
   char name[1000];
@@ -71,7 +90,18 @@ void offline(const char* FileName="test")
     { std::cout << "!!! File Not Found !!!" << std::endl;
       exit(1); }
   // f->ls(); // - DEBUG by printing all objects in ROOT file
-  
+
+  char fname[100];
+  TFile* file;
+  if(makeROOT){
+    sprintf(fname,"/Users/zach/Research/rootFiles/run12NPEhPhi/%s_processed.root",FileName);
+    file = new TFile(fname,"RECREATE");
+    if (file->IsOpen()==kFALSE)
+      {
+	std::cout << "!!! Outfile Not Opened !!!" << std::endl;
+	makeROOT = kFALSE;
+      }
+  }
 
   const Int_t numPtBins = 13;
   const Int_t numTrigs = 4;
@@ -79,7 +109,8 @@ void offline(const char* FileName="test")
   Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
   Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
   Float_t hptCut=0.5;
- // Reconstruction efficiency
+  Float_t lowPhi=-4, highPhi=4;
+  // Reconstruction efficiency
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
   TH1D * USIMNP[numPtBins][numTrigs];
@@ -172,7 +203,7 @@ void offline(const char* FileName="test")
   projPMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionX("projPMixedEtaPhi");
   projEMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionY("projEMixedEtaPhi");
   proj2DMixedEtaPhi = (TH2D*)mh3MixedEtaPhi -> Project3D("yx");
-  Int_t RB2 = 4;
+  Int_t RB2 = 2;
   projMixedDelPhi->Rebin(RB2);
   projMixedDelEta->Rebin(RB2);
   projEMixedEtaPhi->Rebin(RB2);
@@ -180,13 +211,13 @@ void offline(const char* FileName="test")
   
   mixedC->cd(1);
   mh3MixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
-  mh3MixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
+  mh3MixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   mh3MixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
   mh3MixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   mh3MixedEtaPhi->GetZaxis()->SetTitle("P_{t,e}");
   mh3MixedEtaPhi->Draw();
   mixedC->cd(2);
-  projPMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
+  projPMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
   projPMixedEtaPhi->SetTitle("Mixed Event #Delta#phi");
   projPMixedEtaPhi->Draw();
@@ -198,7 +229,7 @@ void offline(const char* FileName="test")
   mixedC->cd(4);
   mixedC->SetLogz(1);
   proj2DMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
-  proj2DMixedEtaPhi->GetXaxis()->SetRangeUser(-2,5);
+  proj2DMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
   proj2DMixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   proj2DMixedEtaPhi->Draw("colz");
@@ -330,7 +361,7 @@ void offline(const char* FileName="test")
       USIMNP[ptbin][trig]->SetLineColor(kRed);
       USIMNP[ptbin][trig]->SetLineWidth(1);
       USIMNP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      USIMNP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
+      USIMNP[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (No Partner Track)");
       else if (ptbin == 1 && trig !=3)
@@ -367,7 +398,7 @@ void offline(const char* FileName="test")
       TH1F *USwP = (TH1F*)USIM[ptbin][trig]->Clone();
       USwP->SetLineColor(kRed); //with partner tracks
       USwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      USwP->GetXaxis()->SetRangeUser(-2,5);
+      USwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	USwP->SetTitle("Photonic Unlike Sign Distributions");
       else if (ptbin == 1 && trig !=3)
@@ -391,7 +422,7 @@ void offline(const char* FileName="test")
       TH1F *LSwP = (TH1F*)LSIM[ptbin][trig]->Clone();
       LSwP->SetLineColor(kRed); //with partner tracks
       LSwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      LSwP->GetXaxis()->SetRangeUser(-2,5);
+      LSwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	LSwP->SetTitle("Photonic Like Sign Distributions");
       else if (ptbin == 1 && trig !=3)
@@ -415,7 +446,7 @@ void offline(const char* FileName="test")
       TH1F *InclwP = (TH1F*)INCL[ptbin][trig]->Clone();
       InclwP->SetLineColor(kRed); //with partner tracks
       InclwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      InclwP->GetXaxis()->SetRangeUser(-2,5);
+      InclwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	InclwP->SetTitle("Inclusive Distributions");
       else if (ptbin == 1 && trig !=3)
@@ -475,7 +506,7 @@ void offline(const char* FileName="test")
       INCL[ptbin][trig]->SetLineColor(kBlue);
       INCL[ptbin][trig]->SetLineWidth(1);
       INCL[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      INCL[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
+      INCL[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	INCL[ptbin][trig]->SetTitle("Inclusive Electrons");
       else if (ptbin == 1 && trig !=3)
@@ -494,7 +525,7 @@ void offline(const char* FileName="test")
       HHDP[ptbin][trig]->SetLineColor(kGreen+3);
       HHDP[ptbin][trig]->SetLineWidth(1);
       HHDP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
-      HHDP[ptbin][trig]->GetXaxis()->SetRangeUser(-2,5);
+      HHDP[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
 	HHDP[ptbin][trig]->SetTitle("Hadron-Hadron Correlations");
       else if (ptbin == 1 && trig !=3)
@@ -513,18 +544,19 @@ void offline(const char* FileName="test")
       TH1F *ULDP  = (TH1F*)USIMNP[ptbin][trig]->Clone();
       TH1F *LSDP  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       TH1F *HADDP = (TH1F*)HHDP[ptbin][trig]->Clone();
+      INCDP->SetName(Form("NPEhDelPhi_%i_%i",trig,ptbin));
       ULDP->Scale(1./epsilon[ptbin] - 1.); // Scale each distribution by associated factors
       LSDP->Scale(1./epsilon[ptbin]);
       HADDP->Scale(HHScale*hadPur);
       INCDP->Add(ULDP,-1);
       INCDP->Add(LSDP,1);
       INCDP->Add(HADDP,-1);
-      INCDP->Scale(1./((Double_t)Norm*INCDP->GetBinWidth(1))); // Normalize to triggers.
+      INCDP->Scale(1./((Double_t)Norm));//*INCDP->GetBinWidth(1))); // Normalize to triggers.
       INCDP->SetLineColor(kBlack);
       INCDP->SetLineWidth(1);
       INCDP->SetFillStyle(3001);
       INCDP->SetFillColor(kYellow);
-      INCDP->GetXaxis()->SetRangeUser(-2,5);
+      INCDP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       INCDP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       INCDP->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
       INCDP->GetYaxis()->SetTitleOffset(1.55);
@@ -544,6 +576,7 @@ void offline(const char* FileName="test")
       NSPI[ptbin][trig]->SetLineColor(kGreen+3);
       NSPI[ptbin][trig]->SetLineWidth(1);
       NSPI[ptbin][trig]->GetXaxis()->SetTitle("n#sigma_{#pi}");
+      NSPI[ptbin][trig]->GetXaxis()->SetRangeUser(-2.,2.);
       if(ptbin == 0)
 	NSPI[ptbin][trig]->SetTitle("n Sigma Pion (n#sigma_{#pi})");
       else if (ptbin == 1 && trig !=3)
@@ -692,6 +725,12 @@ void offline(const char* FileName="test")
 	}
       sprintf(name, "%s.pdf]", FileName);
       temp->Print(name);
+    }
+
+   if(makeROOT)
+    {
+      file->Write();
+      file->Close();
     }
 }
 

@@ -108,8 +108,8 @@ void offline(const char* FileName="test")
   Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323};//, 0.758423};
   Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
   Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
-  Float_t hptCut=0.5;
-  Float_t lowPhi=-4, highPhi=4;
+  Float_t hptCut=0.5, hptMax=25; // Set max above range to allow overflow
+  Float_t lowPhi=-3, highPhi=3;
   // Reconstruction efficiency
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
@@ -165,11 +165,12 @@ void offline(const char* FileName="test")
   TH1D* projInvMassLS[numPtBins][numTrigs];
   TH1D* projInvMassUS[numPtBins][numTrigs];
   TH1D* projnSigmaPion[numPtBins][numTrigs];
-  TH1D* projMixedDelPhi;
-  TH1D* projMixedDelEta;
   TH1D* projEMixedEtaPhi;
   TH1D* projPMixedEtaPhi;
   TH2D* proj2DMixedEtaPhi;
+  TH2D* proj2DMixedEvent[numPtBins];
+  TH1D* projMixedDelPhi[numPtBins];
+  TH1D* projMixedDelEta[numPtBins];
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
   TCanvas * IN[numTrigs];
@@ -184,28 +185,33 @@ void offline(const char* FileName="test")
   TCanvas * cHH[numTrigs];
   TCanvas * nSigPi[numTrigs];
   TCanvas * mixedC;
+  TCanvas * mixedCbinEta;
+  TCanvas * mixedCbinPhi;
+  TCanvas * mixedCbin2D;
   TCanvas * singlePlot;
   TPaveText* lbl[numPtBins];
   char textLabel[100];
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
 
   // Trigger Independent Hists
-  mixedC = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
-  mixedC->Divide(2,2);
+  mixedC     = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
+  mixedCbinEta = new TCanvas("mixedCbinEta","Mixed Events Eta",150,0,1150,1000);
+  mixedCbinPhi = new TCanvas("mixedCbinPhi","Mixed Events Phi",150,0,1150,1000);
+  mixedCbin = new TCanvas("mixedCbin","Mixed Events 2D",150,0,1150,1000);
+  
+  mixedC       -> Divide(2,2);
+  mixedCbinEta -> Divide(4,3);
+  mixedCbinPhi -> Divide(4,3);
+  
   mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
   mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
-  // ONLY FOR AUG12_1 due to ERROR REMOVE FOR ALL OTHER RUNS
-  //mh3MixedEtaPhi = mh3MixedDelEta;
+
   ///////////////////////////
-  projMixedDelPhi   = mh3MixedDelPhi -> ProjectionX("projMixedDelPhi");
-  projMixedDelEta   = mh3MixedDelEta -> ProjectionX("projMixedDelEta");
   projPMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionX("projPMixedEtaPhi");
   projEMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionY("projEMixedEtaPhi");
   proj2DMixedEtaPhi = (TH2D*)mh3MixedEtaPhi -> Project3D("yx");
   Int_t RB2 = 2;
-  projMixedDelPhi->Rebin(RB2);
-  projMixedDelEta->Rebin(RB2);
   projEMixedEtaPhi->Rebin(RB2);
   projPMixedEtaPhi->Rebin(RB2);
   
@@ -219,6 +225,7 @@ void offline(const char* FileName="test")
   mixedC->cd(2);
   projPMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
+  projPMixedEtaPhi->GetYaxis()->SetRangeUser(0,12000);
   projPMixedEtaPhi->SetTitle("Mixed Event #Delta#phi");
   projPMixedEtaPhi->Draw();
   mixedC->cd(3);
@@ -233,7 +240,46 @@ void offline(const char* FileName="test")
   proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
   proj2DMixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   proj2DMixedEtaPhi->Draw("colz");
- 
+
+  TH3F* temp3D[numPtBins];
+  // PtBins for Mixed Event
+  for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
+    
+    // Init necessary plotting tools
+    lbl[ptbin] = new TPaveText(.2,.8,.5,.85,Form("NB NDC%i",ptbin));
+    sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
+    lbl[ptbin]->AddText(textLabel);
+    lbl[ptbin]->SetFillColor(kWhite);
+
+    projMixedDelPhi[ptbin] = mh3MixedEtaPhi->ProjectionX(Form("projMixedDelPhi_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin]));
+    projMixedDelEta[ptbin] = mh3MixedEtaPhi->ProjectionY(Form("projMixedDelEta_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin]));
+    
+    mixedCbinEta->cd(ptbin+1);
+    projMixedDelEta[ptbin]->GetXaxis()->SetRangeUser(-2.5,2.5);
+    projMixedDelEta[ptbin]->GetXaxis()->SetTitle("#Delta#eta");
+    projMixedDelEta[ptbin]->Draw();
+
+    mixedCbinPhi->cd(ptbin+1);
+    projMixedDelPhi[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+    //  projMixedDelPhi[ptbin]->GetYaxis()->SetRangeUser(0,2000);
+    projMixedDelPhi[ptbin]->GetXaxis()->SetTitle("#Delta#phi");
+    projMixedDelPhi[ptbin]->Draw();
+
+    temp3D[ptbin] = (TH3F*)mh3MixedEtaPhi->Clone(); // make a clone to set axis range on for 3D to 2D projection
+    temp3D[ptbin]->GetZaxis()->SetRangeUser(lowpt[ptbin],highpt[ptbin]); // project3d only projects active range
+    proj2DMixedEvent[ptbin] = (TH2D*)temp3D[ptbin] -> Project3D("yx");
+    proj2DMixedEvent[ptbin]->SetName(Form("proj2DMixedEvent_%i",ptbin));
+
+    mixedCbin->cd(ptbin+1);
+    proj2DMixedEvent[ptbin]->GetXaxis()->SetTitle("#Delta#phi");
+    proj2DMixedEvent[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+    proj2DMixedEvent[ptbin]->GetYaxis()->SetTitle("#Delta#eta");
+    proj2DMixedEvent[ptbin]->GetYaxis()->SetRangeUser(-1.5,1.5);
+    proj2DMixedEvent[ptbin]->Draw("colz");
+    
+  }
+
+  /// TRIGGER LOOP
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
@@ -277,27 +323,29 @@ void offline(const char* FileName="test")
     mh3DelPhiHadHad[trig]   = (TH3F*)f->Get(Form("mh3DelPhiHadHad_%i",trig));
     mh1PtHadTracks[trig]    = (TH1F*)f->Get(Form("mh1PtHadTracks_%i",trig));
     mh2nSigmaPion[trig]     = (TH2F*)f->Get(Form("mh2nSigmaPionPt_%i",trig));
-   
+
+    cout << "hpt cut bin: " << mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax) << endl;
+    
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
       {
 	// - Make projections into electron ptbins
 	projHPhi[ptbin][trig]       = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projnSigmaE[ptbin][trig]    = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projnSigmaE_eID[ptbin][trig]    = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin]));
-	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiInclNP[ptbin][trig] = mh3DelPhiInclNP[trig]->ProjectionX(Form("projDelPhiInclNP_%i_%i",ptbin,trig),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),-1);
-	projDelPhiPhotLSWt[ptbin][trig] = mh3DelPhiPhotLSWt[trig]->ProjectionX(Form("projDelPhiPhotLSWt_%i_%i",ptbin,trig),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiInclNP[ptbin][trig] = mh3DelPhiInclNP[trig]->ProjectionX(Form("projDelPhiInclNP_%i_%i",ptbin,trig),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiPhotLSWt[ptbin][trig] = mh3DelPhiPhotLSWt[trig]->ProjectionX(Form("projDelPhiPhotLSWt_%i_%i",ptbin,trig),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 	projInvMassUS[ptbin][trig] = mh2InvMassPtUS[trig]->ProjectionX(Form("projInvMassUS_%i_%i",ptbin,trig),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
 	projInvMassLS[ptbin][trig] = mh2InvMassPtLS[trig]->ProjectionX(Form("projInvMassLS_%i_%i",ptbin,trig),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(highpt[ptbin]));
-	projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),-1);
+	projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin]),mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 	projnSigmaPion[ptbin][trig] = mh2nSigmaPion[trig]->ProjectionX(Form("projnSigmaPion_%i_%i",ptbin,trig),mh2nSigmaPion[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaPion[trig]->GetYaxis()->FindBin(highpt[ptbin]));
       }
     
@@ -354,7 +402,7 @@ void offline(const char* FileName="test")
       LSIM2[ptbin][trig] -> Rebin(RB);
       USIM2[ptbin][trig] -> Rebin(RB);
       HHDP[ptbin][trig]  -> Rebin(RB);
-      NSPI[ptbin][trig]  -> Rebin(4);
+      NSPI[ptbin][trig]  -> Rebin(10);
       
       // Actually manipulate histos and plot (photnic del Phi)
       
@@ -634,10 +682,10 @@ void offline(const char* FileName="test")
   }
   
   // Draw on "SinglePlot" canvas for saving single plots from grid
-  TPad* pNew = (TPad*)InclComp[0]->GetPad(4)->Clone();
-  singlePlot->cd();
-  pNew->ResizePad();
-  pNew->Draw();  
+  // TPad* pNew = (TPad*)InclComp[0]->GetPad(4)->Clone();
+  // singlePlot->cd();
+  //pNew->ResizePad();
+  //pNew->Draw();  
 
   // Make PDF with output canvases
   if(makePDF)
@@ -696,6 +744,12 @@ void offline(const char* FileName="test")
       temp = fp; // print front page
       temp->Print(name);
       temp = mixedC;
+      temp->Print(name);
+      temp = mixedCbinEta;
+      temp->Print(name);
+      temp = mixedCbinPhi;
+      temp->Print(name);
+      temp = mixedCbin;
       temp->Print(name);
       for(Int_t ii=0; ii<numTrigs; ii++)
 	{

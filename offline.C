@@ -3,84 +3,25 @@
 // .L offline.C
 // offline("FILENAME") # Without .root Extension
 
+// Declare functions
+Bool_t checkPaintAllTrigs();
+void checkBatchMode();
+Bool_t checkMakePDF();
+Bool_t checkMakeRoot();
+
 void offline(const char* FileName="test")
 {
    
   // Set Style parameters for this macro
   gStyle->SetOptTitle(1); // Show Title (off by default for cleanliness)
   gErrorIgnoreLevel = kError; // Set Verbosity Level (kPrint shows all)
-  Bool_t fPaintAll = kFALSE;
-  Int_t number = 2;
-  while(number > 1 || number < 0){
-    std::cout << "Show all trigs? [default: 0]: ";
-    std::string input;
-    std::getline( std::cin, input );
-    if ( !input.empty() ) {
-      std::istringstream stream( input );
-      stream >> number;
-      if(number == 1)
-	fPaintAll=kTRUE;
-    }
-    else
-      number = 0;
-  }
-  // sets batch mode, so don't draw canvas
-  number = 2;
-  while(number > 1 || number < 0){
-    std::cout << "Batch Mode? [default: 1]: ";
-    std::string input;
-    std::getline( std::cin, input );
-    if ( !input.empty() ) {
-      std::istringstream stream( input );
-      stream >> number;
-      if(number == 0)
-	gROOT->SetBatch(kFALSE);
-      if(number == 1)
-	gROOT->SetBatch(kTRUE);
-    }
-    else
-      {
-	number = 1;
-	gROOT->SetBatch(kTRUE);
-      }
-  }
 
-    // Set option for pdf creation
-  number = 2; Bool_t makePDF = kTRUE;
-  while(number > 1 || number < 0){
-    std::cout << "Make PDF? [default: 1]: ";
-    std::string input;
-    std::getline( std::cin, input );
-    if ( !input.empty() ){
-      std::istringstream stream( input );
-      stream >> number;
-      if(number == 0)
-	makePDF = kFALSE;
-      if(number == 1)
-	makePDF = kTRUE;
-    }
-    else
-      number = 1; 
-  }
-
-      // Set option for .root creation
-  number = 2; Bool_t makeROOT = kTRUE;
-  while(number > 1 || number < 0){
-    std::cout << "Make .root? [default: 1]: ";
-    std::string input;
-    std::getline( std::cin, input );
-    if ( !input.empty() ){
-      std::istringstream stream( input );
-      stream >> number;
-      if(number == 0)
-	makeROOT = kFALSE;
-      if(number == 1){
-	makeROOT = kTRUE;
-      }
-    }
-    else
-      number = 1; 
-  }
+  // Set Output options
+  Int_t number;
+  Bool_t fPaintAll = checkPaintAllTrigs();
+  checkBatchMode();
+  Bool_t makePDF = checkMakePDF();
+  Bool_t makeROOT= checkMakeRoot();
   
   // Open ROOT File
   char name[1000];
@@ -171,6 +112,7 @@ void offline(const char* FileName="test")
   TH2D* proj2DMixedEvent[numPtBins];
   TH1D* projMixedDelPhi[numPtBins];
   TH1D* projMixedDelEta[numPtBins];
+  TH2F* histoNorms;
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
   TCanvas * IN[numTrigs];
@@ -189,6 +131,7 @@ void offline(const char* FileName="test")
   TCanvas * mixedCbinPhi;
   TCanvas * mixedCbin2D;
   TCanvas * singlePlot;
+
   TPaveText* lbl[numPtBins];
   char textLabel[100];
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
@@ -260,12 +203,12 @@ void offline(const char* FileName="test")
     projMixedDelEta[ptbin]->Draw();
 
     mixedCbinPhi->cd(ptbin+1);
-    projMixedDelPhi[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-    //  projMixedDelPhi[ptbin]->GetYaxis()->SetRangeUser(0,2000);
+    projMixedDelPhi[ptbin]->GetXaxis()->SetRangeUser(lowPhi-.5,highPhi+.5);
+    // projMixedDelPhi[ptbin]->GetYaxis()->SetRangeUser(0,2000);
     projMixedDelPhi[ptbin]->GetXaxis()->SetTitle("#Delta#phi");
     projMixedDelPhi[ptbin]->Draw();
 
-    temp3D[ptbin] = (TH3F*)mh3MixedEtaPhi->Clone(); // make a clone to set axis range on for 3D to 2D projection
+    /*   temp3D[ptbin] = (TH3F*)mh3MixedEtaPhi->Clone(); // make a clone to set axis range on for 3D to 2D projection
     temp3D[ptbin]->GetZaxis()->SetRangeUser(lowpt[ptbin],highpt[ptbin]); // project3d only projects active range
     proj2DMixedEvent[ptbin] = (TH2D*)temp3D[ptbin] -> Project3D("yx");
     proj2DMixedEvent[ptbin]->SetName(Form("proj2DMixedEvent_%i",ptbin));
@@ -275,11 +218,13 @@ void offline(const char* FileName="test")
     proj2DMixedEvent[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
     proj2DMixedEvent[ptbin]->GetYaxis()->SetTitle("#Delta#eta");
     proj2DMixedEvent[ptbin]->GetYaxis()->SetRangeUser(-1.5,1.5);
-    proj2DMixedEvent[ptbin]->Draw("colz");
+    proj2DMixedEvent[ptbin]->Draw("colz");*/
     
   }
 
   /// TRIGGER LOOP
+  histoNorms = new TH2F("histoNorms","",4,0,12,20,0,20); // Fill normalization in a single histogram for accessing later
+
   for(Int_t trig = 0; trig < numTrigs; trig++){
 
     if(!fPaintAll && (trig == 1 || trig == 3)) continue; 
@@ -324,8 +269,6 @@ void offline(const char* FileName="test")
     mh1PtHadTracks[trig]    = (TH1F*)f->Get(Form("mh1PtHadTracks_%i",trig));
     mh2nSigmaPion[trig]     = (TH2F*)f->Get(Form("mh2nSigmaPionPt_%i",trig));
 
-    cout << "hpt cut bin: " << mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax) << endl;
-    
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
       {
 	// - Make projections into electron ptbins
@@ -370,9 +313,8 @@ void offline(const char* FileName="test")
       Int_t hhNorm   = mh1PtHadTracks[trig]->Integral(mh1PtHadTracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtHadTracks[trig]->GetXaxis()->FindBin(highpt[ptbin]));
       Double_t HHScale = (Float_t)inclNorm/(Float_t)hhNorm; // so the purity comparison is 1:1
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
-
-      cout << "Purity: " << purity << " pt: " << ptAv << " HHScale: " << HHScale << endl;
-
+      histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
+      
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
       c[trig]->cd(ptbin+1);
@@ -599,7 +541,7 @@ void offline(const char* FileName="test")
       INCDP->Add(ULDP,-1);
       INCDP->Add(LSDP,1);
       INCDP->Add(HADDP,-1);
-      INCDP->Scale(1./((Double_t)Norm));//*INCDP->GetBinWidth(1))); // Normalize to triggers.
+      // INCDP->Scale(1./((Double_t)Norm));//*INCDP->GetBinWidth(1))); // Normalize to triggers; now happens in FractionFit program
       INCDP->SetLineColor(kBlack);
       INCDP->SetLineWidth(1);
       INCDP->SetFillStyle(3001);
@@ -788,3 +730,93 @@ void offline(const char* FileName="test")
     }
 }
 
+Bool_t checkPaintAllTrigs(){
+  
+  Bool_t cPaintAll = kFALSE;
+  Int_t number = 2;
+  while(number > 1 || number < 0){
+    std::cout << "Show all trigs? [default: 0]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ) {
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 1)
+	cPaintAll=kTRUE;
+    }
+    else
+      number = 0;
+  }
+
+  return cPaintAll;
+
+}
+
+void checkBatchMode(){
+
+ // sets batch mode, so don't draw canvas
+  Int_t number = 2;
+  while(number > 1 || number < 0){
+    std::cout << "Batch Mode? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ) {
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	gROOT->SetBatch(kFALSE);
+      if(number == 1)
+	gROOT->SetBatch(kTRUE);
+    }
+    else
+      {
+	number = 1;
+	gROOT->SetBatch(kTRUE);
+      }
+  }
+}
+
+Bool_t checkMakePDF(){
+
+  // Set option for pdf creation
+  Int_t number = 2; Bool_t fmakePDF = kTRUE;
+  while(number > 1 || number < 0){
+    std::cout << "Make PDF? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ){
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	fmakePDF = kFALSE;
+      if(number == 1)
+	fmakePDF = kTRUE;
+    }
+    else
+      number = 1; 
+  }
+  return fmakePDF;
+}
+
+Bool_t checkMakeRoot(){
+
+  // Set option for .root creation
+  Int_t number = 2; Bool_t fmakeROOT = kTRUE;
+  while(number > 1 || number < 0){
+    std::cout << "Make .root? [default: 1]: ";
+    std::string input;
+    std::getline( std::cin, input );
+    if ( !input.empty() ){
+      std::istringstream stream( input );
+      stream >> number;
+      if(number == 0)
+	fmakeROOT = kFALSE;
+      if(number == 1){
+	fmakeROOT = kTRUE;
+      }
+    }
+    else
+      number = 1; 
+  }
+  return fmakeROOT;
+}

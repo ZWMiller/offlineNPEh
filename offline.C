@@ -3,6 +3,8 @@
 // .L offline.C
 // offline("FILENAME") # Without .root Extension
 
+#include "anaConst.h"
+
 // Declare functions
 Bool_t checkPaintAllTrigs();
 void checkBatchMode();
@@ -43,14 +45,18 @@ void offline(const char* FileName="test")
 	makeROOT = kFALSE;
       }
   }
-
-  const Int_t numPtBins = 13;
+  
+  const Int_t numPtBins = anaConst::nPtBins;
+  Float_t lowpt[numPtBins],highpt[numPtBins];
+  for(Int_t c=0; c< numPtBins; c++){
+    lowpt[c] = anaConst::lpt[c];
+    highpt[c] = anaConst::hpt[c];
+  }
+  Float_t hptCut=anaConst::hptCut;
   const Int_t numTrigs = 4;
-  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323};//, 0.758423};
-  Float_t lowpt[14] ={2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.0};
-  Float_t highpt[14]={3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.5,10.,14.,200.};
-  Float_t hptCut=0.5, hptMax=25; // Set max above range to allow overflow
-  Float_t lowPhi=-3, highPhi=3;
+  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
+  Float_t hptMax=25; // Set max above range to allow overflow
+  Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   // Reconstruction efficiency
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];

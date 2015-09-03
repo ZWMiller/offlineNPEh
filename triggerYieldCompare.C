@@ -14,6 +14,7 @@
   line->SetBinContent(1,1);
   TCanvas* c = new TCanvas("c","",150,0,1150,1000);
   c->Divide(1,2);
+
   c->cd(1);
   zach = (TH1F*)fZ->Get("mh1PtETracks_2");
   xiao = (TH1F*)fX->Get("mh1electronPtTrg2");
@@ -24,9 +25,8 @@
   zach->SetMarkerColor(kRed);
   zach->SetLineColor(kRed);
   divi = (TH1F*)xiao->Clone();
-  cout << "made clone." << endl;
   divi->Divide(divi,zach);
-  cout << "division done." << endl;
+  
   c->cd(2);
   divi->GetYaxis()->SetRangeUser(0.75,1.25);
   divi->GetYaxis()->SetTitle("Xiaozhi/Zach");

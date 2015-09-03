@@ -1,0 +1,22 @@
+{
+  char name[100];
+  sprintf(name,"/Users/zach/Research/rootFiles/run12NPEhPhi/npe_tree_Sep1_1.root");
+  TFile *fZ = new TFile(name,"READ");
+  sprintf(name,"/Users/zach/Research/rootFiles/run12NPEhPhi/XiaozhiJune4.root");
+  TFile *fX = new TFile(name,"READ");
+
+  TH1F* zach;
+  TH1F* xiao;
+  TH1F* divide;
+  
+  zach = (TH1F*)fZ->Get("mh1ptETracks_0");
+  xiao = (TH1F*)fB->Get("mh1electronPtTrg0");
+
+  zach->Rebin(2);
+  divide = (TH1F*)xiao->Clone();
+  divide->Divide(zach);
+
+  TCanvas* c = new TCanvas("c","",150,0,1150,1000);
+  c->cd();
+  divide->Draw();
+}

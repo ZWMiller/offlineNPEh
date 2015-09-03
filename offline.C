@@ -537,10 +537,12 @@ void offline(const char* FileName="test")
       // Subtraction of Inclusive - (1/e - 1)US + (1/e)LS - (1-purity)HadHad
       result[trig]->cd(ptbin+1);
       TH1F *INCDP = (TH1F*)INCLNP[ptbin][trig]->Clone();
+      TH1F *unscaleINCDP = (TH1F*)INCLNP[ptbin][trig]->Clone();
       TH1F *ULDP  = (TH1F*)USIMNP[ptbin][trig]->Clone();
       TH1F *LSDP  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       TH1F *HADDP = (TH1F*)HHDP[ptbin][trig]->Clone();
-      INCDP->SetName(Form("NPEhDelPhi_%i_%i",trig,ptbin));
+      INCDP->SetName(Form("scaleNPEhDelPhi_%i_%i",trig,ptbin));
+      unscaleINCDP->SetName(Form("NPEhDelPhi_%i_%i",trig,ptbin));
       ULDP->Scale(1./epsilon[ptbin] - 1.); // Scale each distribution by associated factors
       LSDP->Scale(1./epsilon[ptbin]);
       HADDP->Scale(HHScale*hadPur);
@@ -566,6 +568,24 @@ void offline(const char* FileName="test")
 	INCDP->SetTitle("");
       INCDP->Draw("");
       lbl[ptbin]->Draw("same");
+
+      // Setup unscaled for fractionFit
+      unscaleINCDP->SetLineColor(kBlack);
+      unscaleINCDP->SetLineWidth(1);
+      unscaleINCDP->SetFillStyle(3001);
+      unscaleINCDP->SetFillColor(kYellow);
+      unscaleINCDP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+      unscaleINCDP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
+      unscaleINCDP->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
+      unscaleINCDP->GetYaxis()->SetTitleOffset(1.55);
+      if(ptbin == 0)
+	unscaleINCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
+      else if (ptbin == 1 && trig !=3)
+	unscaleINCDP->SetTitle(Form("HT%i",trig));
+      else if (trig == 3 && ptbin == 1)
+	unscaleINCDP->SetTitle("MB");
+      else
+	unscaleINCDP->SetTitle("");
 
       // nSigmaPion QA
       nSigPi[trig]->cd(ptbin+1);

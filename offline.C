@@ -174,7 +174,7 @@ void offline(const char* FileName="test")
   mixedC->cd(2);
   projPMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
-  projPMixedEtaPhi->GetYaxis()->SetRangeUser(0,12000);
+  projPMixedEtaPhi->GetYaxis()->SetRangeUser(0,20000);
   projPMixedEtaPhi->SetTitle("Mixed Event #Delta#phi");
   projPMixedEtaPhi->Draw();
   mixedC->cd(3);
@@ -549,7 +549,7 @@ void offline(const char* FileName="test")
       INCDP->Add(ULDP,-1);
       INCDP->Add(LSDP,1);
       INCDP->Add(HADDP,-1);
-      // INCDP->Scale(1./((Double_t)Norm));//*INCDP->GetBinWidth(1))); // Normalize to triggers; now happens in FractionFit program
+      INCDP->Scale(1./((Double_t)Norm));//*INCDP->GetBinWidth(1))); 
       INCDP->SetLineColor(kBlack);
       INCDP->SetLineWidth(1);
       INCDP->SetFillStyle(3001);
@@ -569,7 +569,7 @@ void offline(const char* FileName="test")
       INCDP->Draw("");
       lbl[ptbin]->Draw("same");
 
-      // Setup unscaled for fractionFit
+      // Setup unscaled for fractionFit (don't normalize here!)
       unscaleINCDP->SetLineColor(kBlack);
       unscaleINCDP->SetLineWidth(1);
       unscaleINCDP->SetFillStyle(3001);

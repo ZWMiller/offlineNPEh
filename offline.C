@@ -339,7 +339,7 @@ void offline(const char* FileName="test")
       HHDP[ptbin][trig]  = projDelPhiHadHad[ptbin][trig];
       NSPI[ptbin][trig]  = projnSigmaPion[ptbin][trig];
       // Rebin all as necessary
-      Int_t RB = 2;
+      Int_t RB = 1;
       LSIM[ptbin][trig]  -> Rebin(RB);
       USIM[ptbin][trig]  -> Rebin(RB);
       USIMNP[ptbin][trig]-> Rebin(RB);
@@ -650,10 +650,10 @@ void offline(const char* FileName="test")
   }
   
   // Draw on "SinglePlot" canvas for saving single plots from grid
-  // TPad* pNew = (TPad*)InclComp[0]->GetPad(4)->Clone();
-  // singlePlot->cd();
-  //pNew->ResizePad();
-  //pNew->Draw();  
+  TPad* pNew = (TPad*)result[2]->GetPad(4)->Clone();
+  singlePlot->cd();
+  pNew->ResizePad();
+  pNew->Draw();  
 
   // Make PDF with output canvases
   if(makePDF)

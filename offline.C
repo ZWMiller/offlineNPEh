@@ -54,7 +54,7 @@ void offline(const char* FileName="test")
   }
   Float_t hptCut=anaConst::hptCut;
   const Int_t numTrigs = 4;
-  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
+  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323};//, 0.758423};
   Float_t hptMax=25; // Set max above range to allow overflow
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   // Reconstruction efficiency
@@ -96,6 +96,7 @@ void offline(const char* FileName="test")
   TH3F* mh3DelPhiHadHad[numTrigs];
   TH2F* mh2nSigmaPion[numTrigs];
   TH1F* mh1PtHadTracks[numTrigs];
+  TH1F* mh1PtETracks[numTrigs];
   TH1D* projHPhi[numPtBins][numTrigs];
   TH1D* projnSigmaE[numPtBins][numTrigs];
   TH1D* projnSigmaE_eID[numPtBins][numTrigs];
@@ -132,13 +133,15 @@ void offline(const char* FileName="test")
   TCanvas * InclComp[numTrigs];
   TCanvas * cHH[numTrigs];
   TCanvas * nSigPi[numTrigs];
+  TCanvas * allDist[numTrigs];
   TCanvas * mixedC;
   TCanvas * mixedCbinEta;
   TCanvas * mixedCbinPhi;
-  TCanvas * mixedCbin2D;
+  TCanvas * mixedCbin;
   TCanvas * singlePlot;
 
   TPaveText* lbl[numPtBins];
+  TPaveText* stat[numPtBins];
   char textLabel[100];
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
 
@@ -245,6 +248,7 @@ void offline(const char* FileName="test")
     InclComp[trig] = new TCanvas(Form("InclComp%i",trig),"Inclusive Distributions",150,0,1150,1000);
     cHH[trig]      = new TCanvas(Form("cHH%i",trig),"Hadron-Hadron Distributions",150,0,1150,1000);
     nSigPi[trig]   = new TCanvas(Form("nSigPi_%i",trig),"n#sigma#pi QA",150,0,1150,1000);
+    allDist[trig]  = new TCanvas(Form("allDist_%i",trig),"Distribution Comparison",150,0,1150,1000);
     c[trig]        -> Divide(4,3);
     inMass[trig]   -> Divide(4,3);
     IN[trig]       -> Divide(4,3);
@@ -255,6 +259,7 @@ void offline(const char* FileName="test")
     InclComp[trig] -> Divide(4,3);
     cHH[trig]      -> Divide(4,3);
     nSigPi[trig]   -> Divide(4,3);
+    allDist[trig]  -> Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
     mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
@@ -302,7 +307,7 @@ void offline(const char* FileName="test")
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
 
       // Init necessary plotting tools
-      lbl[ptbin] = new TPaveText(.2,.8,.5,.85,Form("NB NDC%i",ptbin));
+      lbl[ptbin] = new TPaveText(.15,.15,.35,.23,Form("NB NDC%i",ptbin));
       sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
       lbl[ptbin]->AddText(textLabel);
       lbl[ptbin]->SetFillColor(kWhite);
@@ -312,7 +317,14 @@ void offline(const char* FileName="test")
       Float_t p[3] = {0.9743, 0.02128, -0.00438};
       Float_t purity = p[0] + (p[1]*ptAv)+(p[2]*ptAv*ptAv);
       Float_t hadPur = 1-purity;
-      
+
+      // Make stats label with purity and effeciency
+      char statLabel[100];
+      stat[ptbin] = new TPaveText(.4,.3,.85,.35,Form("NB NDC%i",ptbin));
+      sprintf(statLabel,"Eff: %.2f; ePure:%.2f",epsilon[ptbin],purity);
+      stat[ptbin]->InsertText(statLabel);
+      stat[ptbin]->SetFillColor(kWhite);
+
       // Calculate Normalization for NPE delPhi
       Int_t inclNorm = mh1PtETracks[trig]->Integral(mh1PtETracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtETracks[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
       Int_t LSNorm   = projInvMassLS[ptbin][trig]->Integral();
@@ -604,6 +616,47 @@ void offline(const char* FileName="test")
 	NSPI[ptbin][trig]->SetTitle("");
       NSPI[ptbin][trig]->Draw("");
       lbl[ptbin]->Draw("same");
+
+      // All Distributions
+      allDist[trig]->cd(ptbin+1);
+      TH1F *INCLUSIVE = (TH1F*)INCLNP[ptbin][trig]->Clone();
+      TH1F *UNLIKE  = (TH1F*)USIMNP[ptbin][trig]->Clone();
+      TH1F *LIKE  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
+      TH1F *HADRON = (TH1F*)HHDP[ptbin][trig]->Clone();
+      INCLUSIVE->Scale(1./inclNorm);
+      UNLIKE->Scale(1./USNorm);
+      LIKE->Scale(1./LSNorm);
+      HADRON->Scale(1./(hhNorm*HHScale));
+      INCLUSIVE->SetLineColor(7);
+      LIKE->SetLineColor(kBlue);
+      INCLUSIVE->GetYaxis()->SetRangeUser(0.01,2);
+      gPad->SetLogy(1);
+      INCLUSIVE->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+      INCLUSIVE->SetMarkerStyle(20);
+      UNLIKE->SetMarkerStyle(21);
+      LIKE->SetMarkerStyle(22);
+      HADRON->SetMarkerStyle(23);
+      INCLUSIVE->SetMarkerColor(7);
+      INCLUSIVE->SetMarkerSize(0.3);
+      UNLIKE->SetMarkerSize(0.3);
+      LIKE->SetMarkerSize(0.3);
+      HADRON->SetMarkerSize(0.3);
+      INCLUSIVE->SetMarkerColor(7);
+      UNLIKE->SetMarkerColor(kRed);
+      LIKE->SetMarkerColor(kBlue);
+      HADRON->SetMarkerColor(kGreen+3);
+      INCLUSIVE->Draw("");
+      UNLIKE->Draw("same");
+      LIKE->Draw("same");
+      HADRON->Draw("same");
+      lbl[ptbin]->Draw("same");
+      stat[ptbin]->Draw("same");
+      TLegend* legAll = new TLegend(0.45,0.11,0.85,0.3);
+      legAll->AddEntry(INCLUSIVE,"Inclusive","lpe");
+      legAll->AddEntry(UNLIKE,"Unlike Sign","lpe");
+      legAll->AddEntry(LIKE,"Like Sign", "lpe");
+      legAll->AddEntry(HADRON,"Hadron-Hadron", "lpe");
+      legAll->Draw("same");
       
     }
 
@@ -743,6 +796,8 @@ void offline(const char* FileName="test")
 	  temp = InclComp[ii];
 	  temp->Print(name);*/
 	  temp = nSigPi[ii];
+	  temp->Print(name);
+	  temp = allDist[ii];
 	  temp->Print(name);
 	  
 	}

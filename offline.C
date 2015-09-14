@@ -54,7 +54,7 @@ void offline(const char* FileName="test")
   }
   Float_t hptCut=anaConst::hptCut;
   const Int_t numTrigs = 4;
-  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323};//, 0.758423};
+  Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
   Float_t hptMax=25; // Set max above range to allow overflow
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   // Reconstruction efficiency
@@ -287,7 +287,7 @@ void offline(const char* FileName="test")
 	projHPhi[ptbin][trig]       = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 	projnSigmaE[ptbin][trig]    = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 	projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptMax));
 	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
@@ -317,6 +317,12 @@ void offline(const char* FileName="test")
       Float_t p[3] = {0.9743, 0.02128, -0.00438};
       Float_t purity = p[0] + (p[1]*ptAv)+(p[2]*ptAv*ptAv);
       Float_t hadPur = 1-purity;
+
+      // Calculate PHe Reconstruction Eff from Xiaozhi embedding (fit)
+      Float_t par[5] = {.26214, 4.75137, .526075, .0276979, .00054599};
+      Float_t x = ptAv;
+      Float_t eps = par[0]*TMath::Log(par[1]*x - par[2]*x*x + par[3]*x*x*x - par[4]*x*x*x*x);
+      epsilon[ptbin] = eps;
 
       // Make stats label with purity and effeciency
       char statLabel[100];
@@ -623,10 +629,13 @@ void offline(const char* FileName="test")
       TH1F *UNLIKE  = (TH1F*)USIMNP[ptbin][trig]->Clone();
       TH1F *LIKE  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       TH1F *HADRON = (TH1F*)HHDP[ptbin][trig]->Clone();
+      TH1F *USmLS  = (TH1F*)USIMNP[ptbin][trig]->Clone();
+      USmLS->Add(LIKE,-1);
+      USmLS->Scale(1./(USNorm-LSNorm));
       INCLUSIVE->Scale(1./inclNorm);
       UNLIKE->Scale(1./USNorm);
       LIKE->Scale(1./LSNorm);
-      HADRON->Scale(1./(hhNorm*HHScale));
+      HADRON->Scale(1./hhNorm);
       INCLUSIVE->SetLineColor(7);
       LIKE->SetLineColor(kBlue);
       INCLUSIVE->GetYaxis()->SetRangeUser(0.01,2);
@@ -636,11 +645,13 @@ void offline(const char* FileName="test")
       UNLIKE->SetMarkerStyle(21);
       LIKE->SetMarkerStyle(22);
       HADRON->SetMarkerStyle(23);
+      USmLS->SetMarkerStyle(34);
       INCLUSIVE->SetMarkerColor(7);
       INCLUSIVE->SetMarkerSize(0.3);
       UNLIKE->SetMarkerSize(0.3);
       LIKE->SetMarkerSize(0.3);
       HADRON->SetMarkerSize(0.3);
+      USmLS->SetMarkerSize(0.3);
       INCLUSIVE->SetMarkerColor(7);
       UNLIKE->SetMarkerColor(kRed);
       LIKE->SetMarkerColor(kBlue);
@@ -649,6 +660,7 @@ void offline(const char* FileName="test")
       UNLIKE->Draw("same");
       LIKE->Draw("same");
       HADRON->Draw("same");
+      USmLS->Draw("same");
       lbl[ptbin]->Draw("same");
       stat[ptbin]->Draw("same");
       TLegend* legAll = new TLegend(0.45,0.11,0.85,0.3);
@@ -656,6 +668,7 @@ void offline(const char* FileName="test")
       legAll->AddEntry(UNLIKE,"Unlike Sign","lpe");
       legAll->AddEntry(LIKE,"Like Sign", "lpe");
       legAll->AddEntry(HADRON,"Hadron-Hadron", "lpe");
+      legAll->AddEntry(USmLS,"Unlike-Like","lpe");
       legAll->Draw("same");
       
     }

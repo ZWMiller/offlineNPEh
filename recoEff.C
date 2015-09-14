@@ -119,17 +119,21 @@
   bigPlot->Draw("ap");
 
    // Do fits
-  c1->cd(4);
+  c2->cd();
   char fitName[100];
   sprintf(fitName,"myF");
-  TF1 * myF = new TF1("myF","[0]*TMath::Log(x*[1])");
+  TF1 * myF = new TF1(fitName,"[0]*TMath::Log([1]*x-[2]*x*x+[3]*x*x*x-[4]*x*x*x*x)");
   myF->SetParName(0,"c0");
   myF->SetParName(1,"c1");
+  myF->SetParName(2,"c2");
+  myF->SetParName(3,"c3");
+  myF->SetParName(4,"c4");
   myF->SetParameter(0,1);
   myF->SetParameter(1,1);
   gStyle->SetOptFit(1111);
-  effPlot->Fit(fitName,"","",3,13);
-  effPlot->GetFunction(fitName)->SetLineColor(kRed);
+  bigPlot->Fit(fitName,"","",2.5,14);
+  bigPlot->GetFunction(fitName)->SetLineColor(kRed);
+  myF->Draw("same");
   TPaveStats *st = ((TPaveStats*)(effPlot->GetListOfFunctions()->FindObject("stats")));
   if (st) {
     st->SetTextColor(effPlot->GetFunction(fitName)->GetLineColor());

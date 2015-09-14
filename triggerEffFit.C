@@ -21,7 +21,7 @@
   TCanvas * c1 = new TCanvas("c1","",100,0,1000,900);
   TCanvas * c2 = new TCanvas("c2","",100,0,1000,900);
   TCanvas * c3 = new TCanvas("c3","",100,0,1000,900);
-
+  
   c3->cd();
   HT0p->SetMarkerStyle(23);
   HT0p->SetMarkerSize(1.2);
@@ -67,4 +67,5 @@
   cout << "HT0: TMath::Erf(x-2.41589)" << endl;
   cout << "HT2 pt < 4.5 GeV: exp(-16.0543+3.36662*x)" << endl;
   cout << "HT2 pt > 4.5 GeV: TMath::Erf(.651713*x-2.6212)" << endl;
+
 }

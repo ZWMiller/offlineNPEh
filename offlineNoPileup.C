@@ -137,12 +137,6 @@ void offline(const char* FileName="test")
   TH1D* projZDCxTrigLS[numPtBins][numTrigs];
   TH1D* projZDCxHadHad[numPtBins][numTrigs];
   TH1D* projZDCxTrigHad[numPtBins][numTrigs];
-  // 1D 2.5-3.5 GeV Check
-  TH1F* mh1delPhiIncl;
-  TH1F* mh1delPhiUS;
-  TH1F* mh1delPhiLS;
-  TH1F* mh1delPhiHad;
-  TH1F* mh1TrigCount;
   TProfile2D* profileZDCx[numTrigs];
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
@@ -150,7 +144,6 @@ void offline(const char* FileName="test")
   TCanvas * IN2[numTrigs];
   TCanvas * pile[numTrigs];
   TCanvas * pileHad[numTrigs];
-  TCanvas * pileTrig[numTrigs];
   TCanvas * result[numTrigs];
   TCanvas * result2[numTrigs];
   TCanvas * inMass[numTrigs];
@@ -164,7 +157,6 @@ void offline(const char* FileName="test")
   TCanvas * mixedCbinEta;
   TCanvas * mixedCbinPhi;
   TCanvas * mixedCbin;
-  TCanvas * c2535;
   TCanvas * singlePlot;
 
   TPaveText* lbl[numPtBins];
@@ -173,72 +165,6 @@ void offline(const char* FileName="test")
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
 
   // Trigger Independent Hists
-  Float_t parCom[5] = {.26214, 4.75137, .526075, .0276979, .00054599};
-  Float_t xCom = 3.;
-  Float_t epsCom = parCom[0]*TMath::Log(parCom[1]*xCom - parCom[2]*xCom*xCom + parCom[3]*xCom*xCom*xCom - parCom[4]*xCom*xCom*xCom*xCom);
-  Float_t pCom[3] = {0.9743, 0.02128, -0.00438};
-  Float_t pur = pCom[0] + (pCom[1]*xCom)+(pCom[2]*xCom*xCom);
-  Float_t hadPurCom = 1-pur;
-  
-  c2535 =  new TCanvas("c2535","2.5-3.5 GeV, 0.3>hpt",150,0,1150,1000);
-  c2535->cd();
-  mh1delPhiIncl = (TH1F*)f->Get("mh1delPhiIncl");
-  mh1delPhiUS   = (TH1F*)f->Get("mh1delPhiUS");
-  mh1delPhiLS   = (TH1F*)f->Get("mh1delPhiLS");
-  mh1delPhiHad  = (TH1F*)f->Get("mh1delPhiHad");
-  mh1TrigCount  = (TH1F*)f->Get("mh1TrigCount");
-  mh1delPhiIncl -> Rebin(2);
-  mh1delPhiUS   -> Rebin(2);
-  mh1delPhiLS   -> Rebin(2);
-  mh1delPhiHad  -> Rebin(2);
-  TH1F* npe2535 = (TH1F*)mh1delPhiIncl->Clone();
-  npe2535->SetName("npe2535");
-  TH1F* US2535  = (TH1F*)mh1delPhiUS->Clone();
-  TH1F* LS2535  = (TH1F*)mh1delPhiLS->Clone();
-  TH1F* Had2535 = (TH1F*)mh1delPhiHad->Clone();
-  Float_t norm2535 = (Float_t)mh1TrigCount->GetBinContent(1) - (1/epsCom - 1.)*(Float_t)mh1TrigCount->GetBinContent(2) + (1/epsCom)*(Float_t)mh1TrigCount->GetBinContent(3) - (mh1TrigCount->GetBinContent(1)/mh1TrigCount->GetBinContent(4))*hadPurCom*mh1TrigCount->GetBinContent(4);
-  US2535->Scale(1./epsCom - 1.); // Scale each distribution by associated factors
-  LS2535->Scale(1./epsCom);
-  Had2535->Scale(HHScale*hadPur);
-  npe2535->Add(US2535,-1);
-  npe2535->Add(LS2535,1);
-  npe2535->Add(Had2535,-1);
-  npe2535->Scale(1./norm2535);
-  npe2535->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-  
-  // Plot All
-  mh1delPhiIncl -> Scale(1./mh1TrigCount->GetBinContent(1));
-  mh1delPhiUS -> Scale(1./mh1TrigCount->GetBinContent(2));
-  mh1delPhiLS -> Scale(1./mh1TrigCount->GetBinContent(3));
-  mh1delPhiHad -> Scale(1./mh1TrigCount->GetBinContent(4));
-  mh1delPhiIncl->SetLineColor(7);
-  mh1delPhiLS->SetLineColor(kBlue);
-  mh1delPhiIncl->GetYaxis()->SetRangeUser(0.01,2);
-  gPad->SetLogy(1);
-  mh1delPhiIncl->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-  mh1delPhiIncl->SetMarkerStyle(20);
-  mh1delPhiUS->SetMarkerStyle(21);
-  mh1delPhiLS->SetMarkerStyle(22);
-  mh1delPhiHad->SetMarkerStyle(23);
-  mh1delPhiIncl->SetMarkerColor(7);
-  mh1delPhiIncl->SetMarkerSize(0.3);
-  mh1delPhiUS->SetMarkerSize(0.3);
-  mh1delPhiLS->SetMarkerSize(0.3);
-  mh1delPhiHad->SetMarkerSize(0.3);
-  mh1delPhiIncl->SetMarkerColor(7);
-  mh1delPhiUS->SetMarkerColor(kRed);
-  mh1delPhiLS->SetMarkerColor(kBlue);
-  mh1delPhiHad->SetMarkerColor(kGreen+3);
-  npe2535->SetMarkerStyle(20);
-  npe2535->SetMarkerSize(0.5);
-  npe2535->SetMarkerColor(kBlack);
-  mh1delPhiIncl->Draw("");
-  mh1delPhiUS->Draw("same");
-  mh1delPhiLS->Draw("same");
-  mh1delPhiHad->Draw("same");
-  npe2535->Draw("same");
-      
-  /// Mixed Event
   mixedC     = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
   mixedCbinEta = new TCanvas("mixedCbinEta","Mixed Events Eta",150,0,1150,1000);
   mixedCbinPhi = new TCanvas("mixedCbinPhi","Mixed Events Phi",150,0,1150,1000);
@@ -335,7 +261,7 @@ void offline(const char* FileName="test")
     IN[trig]       = new TCanvas(Form("IN%i",trig),"Inclusive Hists",150,0,1150,1000);
     pile[trig]     = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
     pileHad[trig]  = new TCanvas(Form("pileHad%i",trig),"Pileup Monitor",150,0,1150,1000);
-    pileTrig[trig] = new TCanvas(Form("pileTrig%i",trig),"Pileup Monitor",150,0,1150,1000);
+    //  pileTrig[trig] = new TCanvas(Form("pileTrig%i",trig),"Pileup Monitor",150,0,1150,1000);
     inMass[trig]   = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
     result[trig]   = new TCanvas(Form("result%i",trig),"Inclusive - Photonic",150,0,1150,1000);
     USComp[trig]   = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
@@ -444,14 +370,14 @@ void offline(const char* FileName="test")
       stat[ptbin]->SetFillColor(kWhite);
 
       // Calculate Normalization for NPE delPhi
-      Float_t inclNorm = mh1PtETracks[trig]->Integral(mh1PtETracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtETracks[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
-      Float_t LSNorm   = projInvMassLS[ptbin][trig]->Integral();
-      Float_t USNorm   = projInvMassUS[ptbin][trig]->Integral();
+      Int_t inclNorm = mh1PtETracks[trig]->Integral(mh1PtETracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtETracks[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
+      Int_t LSNorm   = projInvMassLS[ptbin][trig]->Integral();
+      Int_t USNorm   = projInvMassUS[ptbin][trig]->Integral();
       hhNorm   = mh1PtHadTracks[trig]->Integral(mh1PtHadTracks[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh1PtHadTracks[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
       HHScale = (Float_t)inclNorm/(Float_t)hhNorm; // so the purity comparison is 1:1
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
       histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
-      if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
+      //cout << trig << "; " << ptbin << ": " << Norm << endl;
       
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
@@ -789,7 +715,7 @@ void offline(const char* FileName="test")
     }
 
     // Pileup Calculation (using just the hPtCut in the anaConst.h)
-    mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
+    /* mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
     mh3nTracksZdcxUS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxUS_%i_%i",trig,0)); // These histos are (epT,hpT,ZDCx), get nHadrons vs ZDCx
     mh3nTracksZdcxLS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxLS_%i_%i",trig,0));
     mh3nTracksZdcxHad[trig] = (TH3F*)f->Get(Form("mh3nTracksZdcxHad_%i_%i",trig,0));
@@ -813,17 +739,6 @@ void offline(const char* FileName="test")
 	projZDCxTrigLS[ptbin][trig] = mh2PtEZdcxLS[trig]->ProjectionY(Form("projZDCxTrigLS_%i_%i",ptbin,trig),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
 	projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
 
-	// Rebin to make the statistics better
-	Int_t RBpu = 5;
-	projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
-	projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
-	projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
-	projZDCxHadHad[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrig[ptbin][trig]    -> Rebin(RBpu);
-	projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
-	
 	// Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
 	projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
 	projZDCxHadLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
@@ -847,7 +762,7 @@ void offline(const char* FileName="test")
 	pile[trig]->cd(ptbin+1);
 	projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
 	projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
-	projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
+	projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTracks>");
 	projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,20);
 	// 
 	gStyle->SetOptFit(1111);
@@ -861,14 +776,13 @@ void offline(const char* FileName="test")
 	}
 	pile[trig]->Modified();pile[trig]->Update();
 	projZDCxHad[ptbin][trig]->Draw("");
-	lbl[ptbin]->Draw("same");
 
 	// Get Fit information and store to use in corrections
 	TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
 	pu[0][ptbin][trig] = fitResult->GetParameter(0);
 	pu[1][ptbin][trig] = fitResult->GetParameter(1);
        	cout << trig << " " << ptbin << ": " << pu[0][ptbin][trig] << " " << pu[1][ptbin][trig] << endl;
-	}
+	}*/
       }
   
   // Draw on "SinglePlot" canvas for saving single plots from grid

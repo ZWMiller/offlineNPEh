@@ -55,7 +55,7 @@ void offline(const char* FileName="test")
   Float_t hptCut=anaConst::hptCut;
   const Int_t numTrigs = 4;
   Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
-  Float_t hptMax=25; // Set max above range to allow overflow
+  Float_t hptMax=anaConst::hptMax; // Set max above range to allow overflow
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   Double_t pu[2][numPtBins][numTrigs]; // To store fit parameters for later use
   Double_t hhNorm, HHScale, hadPur;
@@ -334,8 +334,8 @@ void offline(const char* FileName="test")
     c[trig]        = new TCanvas(Form("c%i",trig),"Photonic Hists",150,0,1150,1000);
     IN[trig]       = new TCanvas(Form("IN%i",trig),"Inclusive Hists",150,0,1150,1000);
     pile[trig]     = new TCanvas(Form("pile%i",trig),"Pileup Monitor",150,0,1150,1000);
-    pileHad[trig]  = new TCanvas(Form("pileHad%i",trig),"Pileup Monitor",150,0,1150,1000);
-    pileTrig[trig] = new TCanvas(Form("pileTrig%i",trig),"Pileup Monitor",150,0,1150,1000);
+    pileHad[trig]  = new TCanvas(Form("pileHad%i",trig),"Pileup Hadron per Event",150,0,1150,1000);
+    pileTrig[trig] = new TCanvas(Form("pileTrig%i",trig),"Pileup Trigger per Event",150,0,1150,1000);
     inMass[trig]   = new TCanvas(Form("inMass%i",trig),"Invariant Mass",150,0,1150,1000);
     result[trig]   = new TCanvas(Form("result%i",trig),"Inclusive - Photonic",150,0,1150,1000);
     USComp[trig]   = new TCanvas(Form("USComp%i",trig),"Unlike Sign Distributions",150,0,1150,1000);
@@ -348,6 +348,8 @@ void offline(const char* FileName="test")
     inMass[trig]   -> Divide(4,3);
     IN[trig]       -> Divide(4,3);
     pile[trig]     -> Divide(4,3);
+    pileHad[trig]  -> Divide(4,3);
+    pileTrig[trig] -> Divide(4,3);
     result[trig]   -> Divide(4,3);
     USComp[trig]   -> Divide(4,3);
     LSComp[trig]   -> Divide(4,3);
@@ -823,6 +825,33 @@ void offline(const char* FileName="test")
 	projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
 	projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
 	projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
+
+	// Draw
+	pileHad[trig]->cd(ptbin+1);
+	projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
+	projZDCxHadUS[ptbin][trig]->SetLineColor(kRed);
+	projZDCxHadLS[ptbin][trig]->SetLineColor(kBlue);
+	projZDCxHadHad[ptbin][trig]->SetLineColor(kGreen+3);
+	projZDCxTrig[ptbin][trig]->SetLineColor(kBlack);
+	projZDCxTrigUS[ptbin][trig]->SetLineColor(kRed);
+	projZDCxTrigLS[ptbin][trig]->SetLineColor(kBlue);
+	projZDCxTrigHad[ptbin][trig]->SetLineColor(kGreen+3);
+	TLegend* legPU = new TLegend(0.45,0.6,0.85,0.79);
+	legPU->AddEntry(projZDCxHad[ptbin][trig],"Semi-Inclusive Trigs","lpe");
+	legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
+	legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
+	legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
+	projZDCxHad[ptbin][trig] -> DrawCopy();
+	projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
+	projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
+	projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
+	legPU->Draw("same");
+	pileTrig[trig]->cd(ptbin+1);
+	projZDCxTrig[ptbin][trig] -> DrawCopy();
+	projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
+	projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");
+	projZDCxTrigHad[ptbin][trig] -> DrawCopy("same");
+	legPU->Draw("same");
 	
 	// Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
 	projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);

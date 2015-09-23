@@ -359,9 +359,9 @@ void offline(const char* FileName="test")
     allDist[trig]  -> Divide(4,3);
 
     // Make Projections (first get 2d/3d hists, then project)
-    mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
-    mh2nSigmaEPt[trig]      = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
-    mh2nSigmaEPt_eID[trig]  = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
+    //mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
+    //mh2nSigmaEPt[trig]      = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
+    //mh2nSigmaEPt_eID[trig]  = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
     mh3DelPhiIncl[trig]     = (TH3F*)f->Get(Form("mh3DelPhiIncl_%i",trig));
     mh3DelPhiPhotLS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
     mh3DelPhiPhotUS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
@@ -381,11 +381,11 @@ void offline(const char* FileName="test")
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
       {
 	// - Make projections into electron ptbins
-	projHPhi[ptbin][trig] = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+	//projHPhi[ptbin][trig] = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 	
-	projnSigmaE[ptbin][trig] = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+	//projnSigmaE[ptbin][trig] = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+	//projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
 	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptMax));
 
@@ -789,7 +789,7 @@ void offline(const char* FileName="test")
       legAll->Draw("same");
       
     }
-
+    cout << "at pileup." << endl;
     // Pileup Calculation (using just the hPtCut in the anaConst.h)
     mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
     mh3nTracksZdcxUS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxUS_%i_%i",trig,0)); // These histos are (epT,hpT,ZDCx), get nHadrons vs ZDCx
@@ -802,7 +802,7 @@ void offline(const char* FileName="test")
     mh2PtEZdcxLS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxLS_%i",trig));
     mh2PtEZdcxHad[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxHad_%i",trig));
     mh2PtEZdcx[trig]->Sumw2(); mh2PtEZdcxUS[trig]->Sumw2(); mh2PtEZdcxLS[trig]->Sumw2(); mh2PtEZdcxHad[trig]->Sumw2();
-    
+
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)// cut in to trigger pt slices
       {
 	projZDCxHad[ptbin][trig] = mh3nTracksZdcx[trig]->ProjectionZ(Form("projZDCxHad_%i_%i",ptbin,trig),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(highpt[ptbin])-1,mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptMax));
@@ -816,7 +816,7 @@ void offline(const char* FileName="test")
 	projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
 
 	// Rebin to make the statistics better
-	Int_t RBpu = 5;
+	Int_t RBpu = 10;
 	projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
 	projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
 	projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
@@ -984,6 +984,10 @@ void offline(const char* FileName="test")
 	  temp->Print(name);
 	  temp = pile[ii];
 	  temp->Print(name);
+	  temp = pileTrig[ii];
+	  temp->Print(name);
+	  temp = pileHad[ii];
+	  temp->Print(name);
 	  /*temp = inMass[ii];
 	  temp->Print(name);
 	  temp = USComp[ii];
@@ -991,9 +995,9 @@ void offline(const char* FileName="test")
 	  temp = LSComp[ii];
 	  temp->Print(name);
 	  temp = InclComp[ii];
-	  temp->Print(name);*/
-	  temp = nSigPi[ii];
 	  temp->Print(name);
+	  temp = nSigPi[ii];
+	  temp->Print(name);*/
 	  temp = allDist[ii];
 	  temp->Print(name);
 	  

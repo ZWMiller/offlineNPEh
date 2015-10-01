@@ -20,18 +20,19 @@ void offline(const char* FileName="test")
 
   // Set Output options
   Int_t number;
-  Bool_t fPaintAll = checkPaintAllTrigs();
+  //Bool_t fPaintAll = checkPaintAllTrigs();
+  Bool_t fPaintAll = kFALSE;
   checkBatchMode();
   Bool_t makePDF = checkMakePDF();
   Bool_t makeROOT= checkMakeRoot();
-  
+
   // Open ROOT File
   char name[1000];
   sprintf(name,"/Users/zach/Research/rootFiles/run12NPEhPhi/%s.root",FileName);
   TFile *f = new TFile(name,"READ");
   if (f->IsOpen()==kFALSE)
-    { std::cout << "!!! File Not Found !!!" << std::endl;
-      exit(1); }
+  { std::cout << "!!! File Not Found !!!" << std::endl;
+    exit(1); }
   // f->ls(); // - DEBUG by printing all objects in ROOT file
 
   char fname[100];
@@ -40,12 +41,12 @@ void offline(const char* FileName="test")
     sprintf(fname,"/Users/zach/Research/rootFiles/run12NPEhPhi/%s_processed.root",FileName);
     file = new TFile(fname,"RECREATE");
     if (file->IsOpen()==kFALSE)
-      {
-	std::cout << "!!! Outfile Not Opened !!!" << std::endl;
-	makeROOT = kFALSE;
-      }
+    {
+      std::cout << "!!! Outfile Not Opened !!!" << std::endl;
+      makeROOT = kFALSE;
+    }
   }
-  
+
   const Int_t numPtBins = anaConst::nPtBins;
   Float_t lowpt[numPtBins],highpt[numPtBins];
   for(Int_t c=0; c< numPtBins; c++){
@@ -59,7 +60,7 @@ void offline(const char* FileName="test")
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   Double_t pu[2][numPtBins][numTrigs]; // To store fit parameters for later use
   Double_t hhNorm, HHScale, hadPur;
-  
+
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
   TH1D * USIMNP[numPtBins][numTrigs];
@@ -143,6 +144,16 @@ void offline(const char* FileName="test")
   TH1F* mh1delPhiLS;
   TH1F* mh1delPhiHad;
   TH1F* mh1TrigCount;
+  TH1F* inclusivePU;
+  TH1F* unlikePU;
+  TH1F* likePU;
+  TH1F* hadronPU;
+  // For Comparison of Dists in different trigs
+  TH1F* inclTrig[numPtBins][numTrigs];
+  TH1F* npeTrig[numPtBins][numTrigs];
+  TH1F* usTrig[numPtBins][numTrigs];
+  TH1F* lsTrig[numPtBins][numTrigs];
+  TH1F* hadTrig[numPtBins][numTrigs];
   TProfile2D* profileZDCx[numTrigs];
   TCanvas * c[numTrigs];
   TCanvas * c2[numTrigs];
@@ -166,12 +177,27 @@ void offline(const char* FileName="test")
   TCanvas * mixedCbin;
   TCanvas * c2535;
   TCanvas * singlePlot;
+  TCanvas * inclComp;
+  TCanvas * usComp;
+  TCanvas * lsComp;
+  TCanvas * hadComp;
+  TCanvas * npeComp;
 
   TPaveText* lbl[numPtBins];
+  TPaveText* pulbl[numPtBins];
   TPaveText* stat[numPtBins];
   char textLabel[100];
   singlePlot =  new TCanvas("singlePlot","Single Plot",150,0,1150,1000);
-
+  inclComp   =  new TCanvas("inclComp","Trigger Comparison Incl",150,0,1150,1000);
+  usComp     =  new TCanvas("usComp","Trigger Comparison US",150,0,1150,1000);
+  lsComp     =  new TCanvas("lsComp","Trigger Comparison LS",150,0,1150,1000);
+  hadComp    =  new TCanvas("hadComp","Trigger Comparison HAD",150,0,1150,1000);
+  npeComp    =  new TCanvas("npeComp","Trigger Comparison NPE",150,0,1150,1000);
+  inclComp->Divide(3,4);
+  usComp->Divide(3,4);
+  lsComp->Divide(3,4);
+  hadComp->Divide(3,4);
+  npeComp->Divide(3,4);
   // Trigger Independent Hists
   Float_t parCom[5] = {.26214, 4.75137, .526075, .0276979, .00054599};
   Float_t xCom = 3.;
@@ -179,7 +205,7 @@ void offline(const char* FileName="test")
   Float_t pCom[3] = {0.9743, 0.02128, -0.00438};
   Float_t pur = pCom[0] + (pCom[1]*xCom)+(pCom[2]*xCom*xCom);
   Float_t hadPurCom = 1-pur;
-  
+
   c2535 =  new TCanvas("c2535","2.5-3.5 GeV, 0.3>hpt",150,0,1150,1000);
   c2535->cd();
   mh1delPhiIncl = (TH1F*)f->Get("mh1delPhiIncl");
@@ -205,7 +231,7 @@ void offline(const char* FileName="test")
   npe2535->Add(Had2535,-1);
   npe2535->Scale(1./norm2535);
   npe2535->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-  
+
   // Plot All
   mh1delPhiIncl -> Scale(1./mh1TrigCount->GetBinContent(1));
   mh1delPhiUS -> Scale(1./mh1TrigCount->GetBinContent(2));
@@ -237,17 +263,17 @@ void offline(const char* FileName="test")
   mh1delPhiLS->Draw("same");
   mh1delPhiHad->Draw("same");
   npe2535->Draw("same");
-      
+
   /// Mixed Event
   mixedC     = new TCanvas("mixedC","Mixed Events",150,0,1150,1000);
   mixedCbinEta = new TCanvas("mixedCbinEta","Mixed Events Eta",150,0,1150,1000);
   mixedCbinPhi = new TCanvas("mixedCbinPhi","Mixed Events Phi",150,0,1150,1000);
   mixedCbin = new TCanvas("mixedCbin","Mixed Events 2D",150,0,1150,1000);
-  
+
   mixedC       -> Divide(2,2);
   mixedCbinEta -> Divide(4,3);
   mixedCbinPhi -> Divide(4,3);
-  
+
   mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
   mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
@@ -259,7 +285,7 @@ void offline(const char* FileName="test")
   Int_t RB2 = 2;
   projEMixedEtaPhi->Rebin(RB2);
   projPMixedEtaPhi->Rebin(RB2);
-  
+
   mixedC->cd(1);
   mh3MixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
   mh3MixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
@@ -289,7 +315,7 @@ void offline(const char* FileName="test")
   TH3F* temp3D[numPtBins];
   // PtBins for Mixed Event
   for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
-    
+
     // Init necessary plotting tools
     lbl[ptbin] = new TPaveText(.2,.8,.5,.85,Form("NB NDC%i",ptbin));
     sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
@@ -298,7 +324,7 @@ void offline(const char* FileName="test")
 
     projMixedDelPhi[ptbin] = mh3MixedEtaPhi->ProjectionX(Form("projMixedDelPhi_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin])-1);
     projMixedDelEta[ptbin] = mh3MixedEtaPhi->ProjectionY(Form("projMixedDelEta_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin])-1);
-    
+
     mixedCbinEta->cd(ptbin+1);
     projMixedDelEta[ptbin]->GetXaxis()->SetRangeUser(-2.5,2.5);
     projMixedDelEta[ptbin]->GetXaxis()->SetTitle("#Delta#eta");
@@ -311,17 +337,17 @@ void offline(const char* FileName="test")
     projMixedDelPhi[ptbin]->Draw();
 
     /*   temp3D[ptbin] = (TH3F*)mh3MixedEtaPhi->Clone(); // make a clone to set axis range on for 3D to 2D projection
-    temp3D[ptbin]->GetZaxis()->SetRangeUser(lowpt[ptbin],highpt[ptbin]); // project3d only projects active range
-    proj2DMixedEvent[ptbin] = (TH2D*)temp3D[ptbin] -> Project3D("yx");
-    proj2DMixedEvent[ptbin]->SetName(Form("proj2DMixedEvent_%i",ptbin));
+         temp3D[ptbin]->GetZaxis()->SetRangeUser(lowpt[ptbin],highpt[ptbin]); // project3d only projects active range
+         proj2DMixedEvent[ptbin] = (TH2D*)temp3D[ptbin] -> Project3D("yx");
+         proj2DMixedEvent[ptbin]->SetName(Form("proj2DMixedEvent_%i",ptbin));
 
-    mixedCbin->cd(ptbin+1);
-    proj2DMixedEvent[ptbin]->GetXaxis()->SetTitle("#Delta#phi");
-    proj2DMixedEvent[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-    proj2DMixedEvent[ptbin]->GetYaxis()->SetTitle("#Delta#eta");
-    proj2DMixedEvent[ptbin]->GetYaxis()->SetRangeUser(-1.5,1.5);
-    proj2DMixedEvent[ptbin]->Draw("colz");*/
-    
+         mixedCbin->cd(ptbin+1);
+         proj2DMixedEvent[ptbin]->GetXaxis()->SetTitle("#Delta#phi");
+         proj2DMixedEvent[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+         proj2DMixedEvent[ptbin]->GetYaxis()->SetTitle("#Delta#eta");
+         proj2DMixedEvent[ptbin]->GetYaxis()->SetRangeUser(-1.5,1.5);
+         proj2DMixedEvent[ptbin]->Draw("colz");*/
+
   }
 
   /// TRIGGER LOOP
@@ -347,9 +373,9 @@ void offline(const char* FileName="test")
     c[trig]        -> Divide(4,3);
     inMass[trig]   -> Divide(4,3);
     IN[trig]       -> Divide(4,3);
-    pile[trig]     -> Divide(4,3);
-    pileHad[trig]  -> Divide(4,3);
-    pileTrig[trig] -> Divide(4,3);
+    //pile[trig]     -> Divide(2,2);
+    //pileHad[trig]  -> Divide(2,2);
+    //pileTrig[trig] -> Divide(2,2);
     result[trig]   -> Divide(4,3);
     USComp[trig]   -> Divide(4,3);
     LSComp[trig]   -> Divide(4,3);
@@ -379,45 +405,45 @@ void offline(const char* FileName="test")
     mh2nSigmaPion[trig]     = (TH2F*)f->Get(Form("mh2nSigmaPionPt_%i",trig));
 
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
-      {
-	// - Make projections into electron ptbins
-	//projHPhi[ptbin][trig] = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-	
-	//projnSigmaE[ptbin][trig] = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+    {
+      // - Make projections into electron ptbins
+      //projHPhi[ptbin][trig] = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	//projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+      //projnSigmaE[ptbin][trig] = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptMax));
+      //projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotUSNP[ptbin][trig] = mh3DelPhiPhotUSNP[trig]->ProjectionX(Form("projDelPhiPhotUSNP_%i_%i",ptbin,trig),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiInclNP[ptbin][trig] = mh3DelPhiInclNP[trig]->ProjectionX(Form("projDelPhiInclNP_%i_%i",ptbin,trig),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotLSNP[ptbin][trig] = mh3DelPhiPhotLSNP[trig]->ProjectionX(Form("projDelPhiPhotLSNP_%i_%i",ptbin,trig),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLSNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiInclNP[ptbin][trig] = mh3DelPhiInclNP[trig]->ProjectionX(Form("projDelPhiInclNP_%i_%i",ptbin,trig),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclNP[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotLS[ptbin][trig] = mh3DelPhiPhotLS[trig]->ProjectionX(Form("projDelPhiPhotLS_%i_%i",ptbin,trig),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiInclWt[ptbin][trig] = mh3DelPhiInclWt[trig]->ProjectionX(Form("projDelPhiInclWt_%i_%i",ptbin,trig),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiInclWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiInclWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projDelPhiPhotLSWt[ptbin][trig] = mh3DelPhiPhotLSWt[trig]->ProjectionX(Form("projDelPhiPhotLSWt_%i_%i",ptbin,trig),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projDelPhiPhotUSWt[ptbin][trig] = mh3DelPhiPhotUSWt[trig]->ProjectionX(Form("projDelPhiPhotUSWt_%i_%i",ptbin,trig),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUSWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projInvMassUS[ptbin][trig] = mh2InvMassPtUS[trig]->ProjectionX(Form("projInvMassUS_%i_%i",ptbin,trig),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+      projDelPhiPhotLSWt[ptbin][trig] = mh3DelPhiPhotLSWt[trig]->ProjectionX(Form("projDelPhiPhotLSWt_%i_%i",ptbin,trig),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotLSWt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotLSWt[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
-	projInvMassLS[ptbin][trig] = mh2InvMassPtLS[trig]->ProjectionX(Form("projInvMassLS_%i_%i",ptbin,trig),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+      projInvMassUS[ptbin][trig] = mh2InvMassPtUS[trig]->ProjectionX(Form("projInvMassUS_%i_%i",ptbin,trig),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+      projInvMassLS[ptbin][trig] = mh2InvMassPtLS[trig]->ProjectionX(Form("projInvMassLS_%i_%i",ptbin,trig),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2InvMassPtLS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
 
-	projnSigmaPion[ptbin][trig] = mh2nSigmaPion[trig]->ProjectionX(Form("projnSigmaPion_%i_%i",ptbin,trig),mh2nSigmaPion[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaPion[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-      }
-    
+      projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
+
+      projnSigmaPion[ptbin][trig] = mh2nSigmaPion[trig]->ProjectionX(Form("projnSigmaPion_%i_%i",ptbin,trig),mh2nSigmaPion[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaPion[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+    }
+
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
 
       // Init necessary plotting tools
@@ -454,7 +480,7 @@ void offline(const char* FileName="test")
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
       histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
       if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
-      
+
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
       c[trig]->cd(ptbin+1);
@@ -485,28 +511,28 @@ void offline(const char* FileName="test")
       USIM2[ptbin][trig] -> Rebin(RB);
       HHDP[ptbin][trig]  -> Rebin(RB);
       NSPI[ptbin][trig]  -> Rebin(10);
-      
+
       // Actually manipulate histos and plot (photnic del Phi)
-      
+
       USIMNP[ptbin][trig]->SetLineColor(kRed);
       USIMNP[ptbin][trig]->SetLineWidth(1);
       USIMNP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       USIMNP[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (No Partner Track)");
+        USIMNP[ptbin][trig]->SetTitle("Photonic Electron Reconstruction (No Partner Track)");
       else if (ptbin == 1 && trig !=3)
-	USIMNP[ptbin][trig]->SetTitle(Form("HT%i",trig));
+        USIMNP[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	USIMNP[ptbin][trig]->SetTitle("MB");
+        USIMNP[ptbin][trig]->SetTitle("MB");
       else
-	USIMNP[ptbin][trig]->SetTitle("");
+        USIMNP[ptbin][trig]->SetTitle("");
       USIMNP[ptbin][trig]->Draw("");
-      
+
       LSIMNP[ptbin][trig]->SetLineColor(kBlack);
       LSIMNP[ptbin][trig]->SetLineWidth(1);
       LSIMNP[ptbin][trig]->Draw(" same");
       lbl[ptbin]->Draw("same");
-      
+
       // Subtraction of (USNP-LS)
       TH1F *SUB = (TH1F*)USIMNP[ptbin][trig]->Clone(); //
       SUB->SetName("Subtraction");      // Create SUB as a clone of USIMNP
@@ -530,13 +556,13 @@ void offline(const char* FileName="test")
       USwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       USwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	USwP->SetTitle("Photonic Unlike Sign Distributions");
+        USwP->SetTitle("Photonic Unlike Sign Distributions");
       else if (ptbin == 1 && trig !=3)
-	USwP->SetTitle(Form("HT%i",trig));
+        USwP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	USwP->SetTitle("MB");
+        USwP->SetTitle("MB");
       else
-	USwP->SetTitle("");
+        USwP->SetTitle("");
       USwP->Draw("");
       TH1F *USnP = (TH1F*)USIMNP[ptbin][trig]->Clone();
       USnP->SetLineColor(kBlack);
@@ -554,13 +580,13 @@ void offline(const char* FileName="test")
       LSwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       LSwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	LSwP->SetTitle("Photonic Like Sign Distributions");
+        LSwP->SetTitle("Photonic Like Sign Distributions");
       else if (ptbin == 1 && trig !=3)
-	LSwP->SetTitle(Form("HT%i",trig));
+        LSwP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	LSwP->SetTitle("MB");
+        LSwP->SetTitle("MB");
       else
-	LSwP->SetTitle("");
+        LSwP->SetTitle("");
       LSwP->Draw("");
       TH1F *LSnP = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       LSnP->SetLineColor(kBlack);
@@ -578,13 +604,13 @@ void offline(const char* FileName="test")
       InclwP->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       InclwP->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	InclwP->SetTitle("Inclusive Distributions");
+        InclwP->SetTitle("Inclusive Distributions");
       else if (ptbin == 1 && trig !=3)
-	InclwP->SetTitle(Form("HT%i",trig));
+        InclwP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	InclwP->SetTitle("MB");
+        InclwP->SetTitle("MB");
       else
-	InclwP->SetTitle("");
+        InclwP->SetTitle("");
       InclwP->Draw("");
       TH1F *InclnP = (TH1F*)INCLNP[ptbin][trig]->Clone();
       InclnP->SetLineColor(kBlack);
@@ -602,15 +628,15 @@ void offline(const char* FileName="test")
       USMM[ptbin][trig]->GetXaxis()->SetTitle("InvMass (GeV/c^{2})");
       USMM[ptbin][trig]->GetXaxis()->SetRangeUser(0,0.4);
       if(ptbin == 0)
-	USMM[ptbin][trig]->SetTitle("Photonic Electron Reconstruction");
+        USMM[ptbin][trig]->SetTitle("Photonic Electron Reconstruction");
       else if (ptbin == 1 && trig !=3)
-	USMM[ptbin][trig]->SetTitle(Form("HT%i",trig));
+        USMM[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	USMM[ptbin][trig]->SetTitle("MB");
+        USMM[ptbin][trig]->SetTitle("MB");
       else
-	USMM[ptbin][trig]->SetTitle("");
+        USMM[ptbin][trig]->SetTitle("");
       USMM[ptbin][trig]->Draw("");
-      
+
       LSMM[ptbin][trig]->SetLineColor(kBlack);
       LSMM[ptbin][trig]->SetLineWidth(1);
       LSMM[ptbin][trig]->Draw("same");
@@ -631,20 +657,20 @@ void offline(const char* FileName="test")
       leg2->AddEntry(SUB4,"Unlike - Like", "lpe");
       leg2->Draw();
 
-       // Handle Inclusive Hists
+      // Handle Inclusive Hists
       IN[trig]->cd(ptbin+1);
       INCL[ptbin][trig]->SetLineColor(kBlue);
       INCL[ptbin][trig]->SetLineWidth(1);
       INCL[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       INCL[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	INCL[ptbin][trig]->SetTitle("Inclusive Electrons");
+        INCL[ptbin][trig]->SetTitle("Inclusive Electrons");
       else if (ptbin == 1 && trig !=3)
-	INCL[ptbin][trig]->SetTitle(Form("HT%i",trig));
+        INCL[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	INCL[ptbin][trig]->SetTitle("MB");
+        INCL[ptbin][trig]->SetTitle("MB");
       else
-	INCL[ptbin][trig]->SetTitle("");
+        INCL[ptbin][trig]->SetTitle("");
       INCL[ptbin][trig]->Draw("");
       lbl[ptbin]->Draw("same");
 
@@ -657,17 +683,17 @@ void offline(const char* FileName="test")
       HHDP[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi_{eh}");
       HHDP[ptbin][trig]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       if(ptbin == 0)
-	HHDP[ptbin][trig]->SetTitle("Hadron-Hadron Correlations");
+        HHDP[ptbin][trig]->SetTitle("Hadron-Hadron Correlations");
       else if (ptbin == 1 && trig !=3)
-	HHDP[ptbin][trig]->SetTitle(Form("HT%i",trig));
+        HHDP[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	HHDP[ptbin][trig]->SetTitle("MB");
+        HHDP[ptbin][trig]->SetTitle("MB");
       else
-	HHDP[ptbin][trig]->SetTitle("");
+        HHDP[ptbin][trig]->SetTitle("");
       HHDP[ptbin][trig]->Draw("");
       lbl[ptbin]->Draw("same");
-      
-      
+
+
       // Subtraction of Inclusive - (1/e - 1)US + (1/e)LS - (1-purity)HadHad
       result[trig]->cd(ptbin+1);
       TH1F *INCDP = (TH1F*)INCLNP[ptbin][trig]->Clone();
@@ -693,13 +719,13 @@ void offline(const char* FileName="test")
       INCDP->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
       INCDP->GetYaxis()->SetTitleOffset(1.55);
       if(ptbin == 0)
-	INCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
+        INCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
       else if (ptbin == 1 && trig !=3)
-	INCDP->SetTitle(Form("HT%i",trig));
+        INCDP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	INCDP->SetTitle("MB");
+        INCDP->SetTitle("MB");
       else
-	INCDP->SetTitle("");
+        INCDP->SetTitle("");
       INCDP->Draw("");
       lbl[ptbin]->Draw("same");
 
@@ -713,13 +739,13 @@ void offline(const char* FileName="test")
       unscaleINCDP->GetYaxis()->SetTitle("1/N_{NPE} #upoint dN/d(#Delta)#phi");
       unscaleINCDP->GetYaxis()->SetTitleOffset(1.55);
       if(ptbin == 0)
-	unscaleINCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
+        unscaleINCDP->SetTitle("#Delta#phi Non-Photonic Electrons and Hadrons");
       else if (ptbin == 1 && trig !=3)
-	unscaleINCDP->SetTitle(Form("HT%i",trig));
+        unscaleINCDP->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	unscaleINCDP->SetTitle("MB");
+        unscaleINCDP->SetTitle("MB");
       else
-	unscaleINCDP->SetTitle("");
+        unscaleINCDP->SetTitle("");
 
       // nSigmaPion QA
       nSigPi[trig]->cd(ptbin+1);
@@ -728,13 +754,13 @@ void offline(const char* FileName="test")
       NSPI[ptbin][trig]->GetXaxis()->SetTitle("n#sigma_{#pi}");
       NSPI[ptbin][trig]->GetXaxis()->SetRangeUser(-2.,2.);
       if(ptbin == 0)
-	NSPI[ptbin][trig]->SetTitle("n Sigma Pion (n#sigma_{#pi})");
+        NSPI[ptbin][trig]->SetTitle("n Sigma Pion (n#sigma_{#pi})");
       else if (ptbin == 1 && trig !=3)
-	NSPI[ptbin][trig]->SetTitle(Form("HT%i",trig));
+        NSPI[ptbin][trig]->SetTitle(Form("HT%i",trig));
       else if (trig == 3 && ptbin == 1)
-	NSPI[ptbin][trig]->SetTitle("MB");
+        NSPI[ptbin][trig]->SetTitle("MB");
       else
-	NSPI[ptbin][trig]->SetTitle("");
+        NSPI[ptbin][trig]->SetTitle("");
       NSPI[ptbin][trig]->Draw("");
       lbl[ptbin]->Draw("same");
 
@@ -787,119 +813,262 @@ void offline(const char* FileName="test")
       legAll->AddEntry(USmLS,"Unlike-Like","lpe");
       legAll->AddEntry(INCDP,"NPE-h","lpe");
       legAll->Draw("same");
-      
+
+      // Clone the distributions for comparisons across trigs
+      inclTrig[ptbin][trig]  = (TH1F*)INCLUSIVE->Clone();
+      inclTrig[ptbin][trig]  ->SetName(Form("inclTrig_%i",trig));
+      usTrig[ptbin][trig]    = (TH1F*)UNLIKE->Clone();
+      usTrig[ptbin][trig]    ->SetName(Form("usTrig_%i",trig));
+      lsTrig[ptbin][trig]    = (TH1F*)LIKE->Clone();
+      lsTrig[ptbin][trig]    ->SetName(Form("lsTrig_%i",trig));
+      hadTrig[ptbin][trig]   = (TH1F*)HADRON->Clone();
+      hadTrig[ptbin][trig]   ->SetName(Form("hadTrig_%i",trig));
+      npeTrig[ptbin][trig]   = (TH1F*)INCDP->Clone();
+      npeTrig[ptbin][trig]   ->SetName(Form("npeTrig_%i",trig));
     }
-    cout << "at pileup." << endl;
+
     // Pileup Calculation (using just the hPtCut in the anaConst.h)
     mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
     mh3nTracksZdcxUS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxUS_%i_%i",trig,0)); // These histos are (epT,hpT,ZDCx), get nHadrons vs ZDCx
     mh3nTracksZdcxLS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxLS_%i_%i",trig,0));
     mh3nTracksZdcxHad[trig] = (TH3F*)f->Get(Form("mh3nTracksZdcxHad_%i_%i",trig,0));
     mh3nTracksZdcx[trig]->Sumw2(); mh3nTracksZdcxUS[trig]->Sumw2(); mh3nTracksZdcxLS[trig]->Sumw2();  mh3nTracksZdcxHad[trig]->Sumw2();
-    
+
     mh2PtEZdcx[trig]       = (TH2F*)f->Get(Form("mh2PtEZdcx_%i",trig));            // Filled (epT,ZDCx). Get nTrigs vs ZDCx
     mh2PtEZdcxUS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxUS_%i",trig));
     mh2PtEZdcxLS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxLS_%i",trig));
     mh2PtEZdcxHad[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxHad_%i",trig));
     mh2PtEZdcx[trig]->Sumw2(); mh2PtEZdcxUS[trig]->Sumw2(); mh2PtEZdcxLS[trig]->Sumw2(); mh2PtEZdcxHad[trig]->Sumw2();
 
-    for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)// cut in to trigger pt slices
-      {
-	projZDCxHad[ptbin][trig] = mh3nTracksZdcx[trig]->ProjectionZ(Form("projZDCxHad_%i_%i",ptbin,trig),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(highpt[ptbin])-1,mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptMax));
-	projZDCxHadUS[ptbin][trig] = mh3nTracksZdcxUS[trig]->ProjectionZ(Form("projZDCxHadUS_%i_%i",ptbin,trig),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(highpt[ptbin])-1,mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptMax));
-	projZDCxHadLS[ptbin][trig] = mh3nTracksZdcxLS[trig]->ProjectionZ(Form("projZDCxHadLS_%i_%i",ptbin,trig),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(highpt[ptbin])-1,mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptMax));
-	projZDCxHadHad[ptbin][trig] = mh3nTracksZdcxHad[trig]->ProjectionZ(Form("projZDCxHadHad_%i_%i",ptbin,trig),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(highpt[ptbin])-1,mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptMax));
+    Double_t pulowpt[4]  = {2.5,4,6,8};
+    Double_t puhighpt[4] = {20,6,8,20};
+    if(trig == 0){pulowpt[0]=2.5; puhighpt[0]=10.5;}
+    if(trig == 2){pulowpt[0]=4.5; puhighpt[0]=10.5;}
+    for(Int_t ptbin=0; ptbin<1; ptbin++)// cut in to trigger pt slices
+    {
+      projZDCxHad[ptbin][trig] = mh3nTracksZdcx[trig]->ProjectionZ(Form("projZDCxHad_%i_%i",ptbin,trig),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadUS[ptbin][trig] = mh3nTracksZdcxUS[trig]->ProjectionZ(Form("projZDCxHadUS_%i_%i",ptbin,trig),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadLS[ptbin][trig] = mh3nTracksZdcxLS[trig]->ProjectionZ(Form("projZDCxHadLS_%i_%i",ptbin,trig),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadHad[ptbin][trig] = mh3nTracksZdcxHad[trig]->ProjectionZ(Form("projZDCxHadHad_%i_%i",ptbin,trig),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptMax));
 
-	projZDCxTrig[ptbin][trig] = mh2PtEZdcx[trig]->ProjectionY(Form("projZDCxTrig_%i_%i",ptbin,trig),mh2PtEZdcx[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcx[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
-	projZDCxTrigUS[ptbin][trig] = mh2PtEZdcxUS[trig]->ProjectionY(Form("projZDCxTrigUS_%i_%i",ptbin,trig),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
-	projZDCxTrigLS[ptbin][trig] = mh2PtEZdcxLS[trig]->ProjectionY(Form("projZDCxTrigLS_%i_%i",ptbin,trig),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
-	projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
+      projZDCxTrig[ptbin][trig] = mh2PtEZdcx[trig]->ProjectionY(Form("projZDCxTrig_%i_%i",ptbin,trig),mh2PtEZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigUS[ptbin][trig] = mh2PtEZdcxUS[trig]->ProjectionY(Form("projZDCxTrigUS_%i_%i",ptbin,trig),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigLS[ptbin][trig] = mh2PtEZdcxLS[trig]->ProjectionY(Form("projZDCxTrigLS_%i_%i",ptbin,trig),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
 
-	// Rebin to make the statistics better
-	Int_t RBpu = 10;
-	projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
-	projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
-	projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
-	projZDCxHadHad[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrig[ptbin][trig]    -> Rebin(RBpu);
-	projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
-	projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
+      // Rebin to make the statistics better
+      Int_t RBpu = 5;
+      projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
+      projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
+      projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
+      projZDCxHadHad[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrig[ptbin][trig]    -> Rebin(RBpu);
+      projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
 
-	// Draw
-	pileHad[trig]->cd(ptbin+1);
-	projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
-	projZDCxHadUS[ptbin][trig]->SetLineColor(kRed);
-	projZDCxHadLS[ptbin][trig]->SetLineColor(kBlue);
-	projZDCxHadHad[ptbin][trig]->SetLineColor(kGreen+3);
-	projZDCxTrig[ptbin][trig]->SetLineColor(kBlack);
-	projZDCxTrigUS[ptbin][trig]->SetLineColor(kRed);
-	projZDCxTrigLS[ptbin][trig]->SetLineColor(kBlue);
-	projZDCxTrigHad[ptbin][trig]->SetLineColor(kGreen+3);
-	TLegend* legPU = new TLegend(0.45,0.6,0.85,0.79);
-	legPU->AddEntry(projZDCxHad[ptbin][trig],"Semi-Inclusive Trigs","lpe");
-	legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
-	legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
-	legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
-	projZDCxHad[ptbin][trig] -> DrawCopy();
-	projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
-	projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
-	projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
-	legPU->Draw("same");
-	pileTrig[trig]->cd(ptbin+1);
-	projZDCxTrig[ptbin][trig] -> DrawCopy();
-	projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
-	projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");
-	projZDCxTrigHad[ptbin][trig] -> DrawCopy("same");
-	legPU->Draw("same");
-	
-	// Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
-	projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
-	projZDCxHadLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
-	projZDCxHadHad[ptbin][trig]-> Scale(HHScale*hadPur);
-	projZDCxHad[ptbin][trig] -> Add(projZDCxHadUS[ptbin][trig], -1.);
-	projZDCxHad[ptbin][trig] -> Add(projZDCxHadLS[ptbin][trig], 1.);
-	projZDCxHad[ptbin][trig] -> Add(projZDCxHadHad[ptbin][trig], -1.);
-	
-	// Get Total number of trigs in pileup (first scale each distribution by efficiency, just like data)
-	projZDCxTrigUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
-	projZDCxTrigLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
-	projZDCxTrigHad[ptbin][trig]-> Scale(HHScale*hadPur);
-	projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigUS[ptbin][trig], -1.);
-	projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigLS[ptbin][trig], 1.);
-	projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigHad[ptbin][trig], -1.);
+      pulbl[ptbin] = new TPaveText(.15,.15,.35,.23,Form("NB NDC%i",ptbin));
+      sprintf(textLabel,"%.1f < P_{T,e} < %.1f",pulowpt[ptbin],puhighpt[ptbin]);
+      pulbl[ptbin]->AddText(textLabel);
+      pulbl[ptbin]->SetFillColor(kWhite);
 
-	// Actually do the division of total hadrons/total trigs
-	projZDCxHad[ptbin][trig]->Divide(projZDCxTrig[ptbin][trig]);
-	
-	// plot projections
-	pile[trig]->cd(ptbin+1);
-	projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
-	projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
-	projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
-	projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,20);
-	// 
-	gStyle->SetOptFit(1111);
-	projZDCxHad[ptbin][trig]->Fit("pol1");
-	projZDCxHad[ptbin][trig]->GetFunction("pol1")->SetLineColor(kRed);
-	TPaveStats *st = ((TPaveStats*)(projZDCxHad[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
-	if (st) {
-	  st->SetTextColor(projZDCxHad[ptbin][trig]->GetFunction("pol1")->GetLineColor());
-	  st->SetX1NDC(0.64); st->SetX2NDC(0.99);
-	  st->SetY1NDC(0.4); st->SetY2NDC(0.6);
-	}
-	pile[trig]->Modified();pile[trig]->Update();
-	projZDCxHad[ptbin][trig]->Draw("");
-	lbl[ptbin]->Draw("same");
+      // Make plots for each subset
+      inclusivePU = (TH1F*)projZDCxHad[ptbin][trig]->Clone(); inclusivePU->Divide(projZDCxTrig[ptbin][trig]);
+      inclusivePU->SetName(Form("inclusivePU_%i",trig));
+      unlikePU = (TH1F*)projZDCxHadUS[ptbin][trig]->Clone(); unlikePU->Divide(projZDCxTrigUS[ptbin][trig]);
+      unlikePU->SetName(Form("unlikePU_%i",trig));
+      likePU = (TH1F*)projZDCxHadLS[ptbin][trig]->Clone(); likePU->Divide(projZDCxTrigLS[ptbin][trig]);
+      likePU->SetName(Form("likePU_%i",trig));
+      hadronPU = (TH1F*)projZDCxHadHad[ptbin][trig]->Clone(); hadronPU->Divide(projZDCxTrigHad[ptbin][trig]);
+      hadronPU->SetName(Form("hadronPU_%i",trig));
+      inclusivePU->SetLineColor(kMagenta);
+      unlikePU->SetLineColor(kRed);
+      likePU->SetLineColor(kBlue);
+      hadronPU->SetLineColor(kGreen+3);
+      inclusivePU->SetMarkerColor(kMagenta);
+      unlikePU->SetMarkerColor(kRed);
+      likePU->SetMarkerColor(kBlue);
+      hadronPU->SetMarkerColor(kGreen+3);
+      inclusivePU->SetMarkerStyle(20);
+      unlikePU->SetMarkerStyle(21);
+      likePU->SetMarkerStyle(22);
+      hadronPU->SetMarkerStyle(23);	
 
-	// Get Fit information and store to use in corrections
-	TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
-	pu[0][ptbin][trig] = fitResult->GetParameter(0);
-	pu[1][ptbin][trig] = fitResult->GetParameter(1);
-       	cout << trig << " " << ptbin << ": " << pu[0][ptbin][trig] << " " << pu[1][ptbin][trig] << endl;
-	}
+      // Draw
+      pileHad[trig]->cd();
+      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxHadUS[ptbin][trig]->SetLineColor(kRed);
+      projZDCxHadLS[ptbin][trig]->SetLineColor(kBlue);
+      projZDCxHadHad[ptbin][trig]->SetLineColor(kGreen+3);
+      projZDCxTrig[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxTrigUS[ptbin][trig]->SetLineColor(kRed);
+      projZDCxTrigLS[ptbin][trig]->SetLineColor(kBlue);
+      projZDCxTrigHad[ptbin][trig]->SetLineColor(kGreen+3);
+      TLegend* legPU = new TLegend(0.45,0.6,0.85,0.79);
+      legPU->AddEntry(projZDCxHad[ptbin][trig],"Semi-Inclusive Trigs","lpe");
+      legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
+      legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
+      legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
+      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("nHadrons");
+      projZDCxHad[ptbin][trig] -> DrawCopy();
+      projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
+      projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
+      projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
+      legPU->Draw("same");
+      pileTrig[trig]->cd();
+      projZDCxTrig[ptbin][trig]->GetXaxis()->SetTitle("nTriggers");
+      projZDCxTrig[ptbin][trig] -> DrawCopy();
+      projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
+      projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");
+      projZDCxTrigHad[ptbin][trig] -> DrawCopy("same");
+      legPU->Draw("same");
+      pulbl[ptbin]->Draw("same");
+
+      // Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
+      projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
+      projZDCxHadLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
+      projZDCxHadHad[ptbin][trig]-> Scale(HHScale*hadPur);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadUS[ptbin][trig], -1.);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadLS[ptbin][trig], 1.);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadHad[ptbin][trig], -1.);
+
+      // Get Total number of trigs in pileup (first scale each distribution by efficiency, just like data)
+      projZDCxTrigUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
+      projZDCxTrigLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
+      projZDCxTrigHad[ptbin][trig]-> Scale(HHScale*hadPur);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigUS[ptbin][trig], -1.);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigLS[ptbin][trig], 1.);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigHad[ptbin][trig], -1.);
+
+      // Actually do the division of total hadrons/total trigs
+      projZDCxHad[ptbin][trig]->Divide(projZDCxTrig[ptbin][trig]);
+
+      // plot projections
+      pile[trig]->cd();
+      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxHad[ptbin][trig]->SetMarkerStyle(25);
+      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,20);
+      // 
+      gStyle->SetOptFit(1111);
+      projZDCxHad[ptbin][trig]->Fit("pol1","Q");
+      projZDCxHad[ptbin][trig]->GetFunction("pol1")->SetLineColor(kBlack);
+      TPaveStats *st = ((TPaveStats*)(projZDCxHad[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
+      if (st) {
+        st->SetTextColor(projZDCxHad[ptbin][trig]->GetFunction("pol1")->GetLineColor());
+        st->SetX1NDC(0.64); st->SetX2NDC(0.99);
+        st->SetY1NDC(0.4); st->SetY2NDC(0.6);
       }
-  
+      pile[trig]->Modified();pile[trig]->Update();
+      projZDCxHad[ptbin][trig]->Draw("");
+      pulbl[ptbin]->Draw("same");
+
+      // Draw for each Dist
+      inclusivePU ->Draw("same");
+      unlikePU    ->Draw("same");
+      likePU      ->Draw("same");
+      hadronPU    ->Draw("same");
+
+      TLegend* pileupLeg = new TLegend(0.2,0.73,0.55,0.85);
+      pileupLeg->AddEntry(projZDCxHad[ptbin][trig],"NPE","lpe");
+      pileupLeg->AddEntry(inclusivePU,"Semi-Inclusive","lpe");
+      pileupLeg->AddEntry(unlikePU,"Unlike Sign","lpe");
+      pileupLeg->AddEntry(likePU,"Like Sign","lpe");
+      pileupLeg->AddEntry(hadronPU,"Hadron","lpe");
+      pileupLeg->Draw("same");
+
+      // Get Fit information and store to use in corrections
+      TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
+      pu[0][ptbin][trig] = fitResult->GetParameter(0);
+      pu[1][ptbin][trig] = fitResult->GetParameter(1);
+      inclusivePU->Fit("pol1","Q");
+      TF1* inclusiveFIT = inclusivePU->GetFunction("pol1");
+      unlikePU->Fit("pol1","Q");
+      TF1* unlikeFIT = unlikePU->GetFunction("pol1");
+      likePU->Fit("pol1","Q");
+      TF1* likeFIT = likePU->GetFunction("pol1");
+      hadronPU->Fit("pol1","Q");
+      TF1* hadronFIT = hadronPU->GetFunction("pol1");
+      cout <<"NPEtrig " << trig << " " << pu[0][ptbin][trig] <<" " << fitResult->GetParError(0) << " " << pu[1][ptbin][trig] <<" " << fitResult->GetParError(1) << endl;
+      cout << "InclusiveTrig: " << trig <<" "<< inclusiveFIT->GetParameter(0) <<" "<< inclusiveFIT->GetParError(0)<< " " << inclusiveFIT->GetParameter(1) <<" "<<inclusiveFIT->GetParError(1)<< endl;
+      cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0)  <<" "<< unlikeFIT->GetParError(0)<< " " << unlikeFIT->GetParameter(1) <<" "<<unlikeFIT->GetParError(1)<< endl;
+      cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParError(0)<<" "<< likeFIT->GetParameter(1) <<" "<<likeFIT->GetParError(1)<< endl;
+      cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParError(0)<<" "<< hadronFIT->GetParameter(1) <<" "<<hadronFIT->GetParError(1)<< endl;
+
+    }
+  }
+
+  // Plot all of the distributions for each trigger
+  for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++)
+  {
+    inclTrig[ptbin][0]  -> SetLineColor(kBlack);
+    inclTrig[ptbin][0]  -> SetMarkerColor(kBlack);
+    usTrig[ptbin][0]    -> SetLineColor(kBlack);
+    usTrig[ptbin][0]    -> SetMarkerColor(kBlack);
+    lsTrig[ptbin][0]    -> SetLineColor(kBlack);
+    lsTrig[ptbin][0]    -> SetMarkerColor(kBlack);
+    hadTrig[ptbin][0]   -> SetLineColor(kBlack);
+    hadTrig[ptbin][0]   -> SetMarkerColor(kBlack);
+    npeTrig[ptbin][0]   -> SetLineColor(kBlack);
+    npeTrig[ptbin][0]   -> SetMarkerColor(kBlack);
+    inclTrig[ptbin][2]  -> SetLineColor(kRed);
+    inclTrig[ptbin][2]  -> SetMarkerColor(kRed);
+    usTrig[ptbin][2]    -> SetLineColor(kRed);
+    usTrig[ptbin][2]    -> SetMarkerColor(kRed);
+    lsTrig[ptbin][2]    -> SetLineColor(kRed);
+    lsTrig[ptbin][2]    -> SetMarkerColor(kRed);
+    hadTrig[ptbin][2]   -> SetLineColor(kRed);
+    hadTrig[ptbin][2]   -> SetMarkerColor(kRed);
+    npeTrig[ptbin][2]   -> SetLineColor(kRed);
+    npeTrig[ptbin][2]   -> SetMarkerColor(kRed);
+
+    //reset range 
+    inclTrig[ptbin][0]->GetYaxis()->SetRange();
+    usTrig[ptbin][0]->GetYaxis()->SetRange();
+    lsTrig[ptbin][0]->GetYaxis()->SetRange();
+    hadTrig[ptbin][0]->GetYaxis()->SetRange();
+    npeTrig[ptbin][0]->GetYaxis()->SetRange();
+
+    TLegend* compLeg = new TLegend(0.2,0.73,0.55,0.85);
+    compLeg -> AddEntry(inclTrig[ptbin][0],"HT0","le");
+    compLeg -> AddEntry(inclTrig[ptbin][2],"HT2","le");
+    lbl[ptbin] = new TPaveText(.5,.8,.7,.85,Form("NB NDC%i",ptbin));
+    sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
+    lbl[ptbin]->AddText(textLabel);
+    lbl[ptbin]->SetFillColor(kWhite);
+    
+    inclComp->cd(ptbin+1);
+    gPad->SetLogy(1);
+    inclTrig[ptbin][0]  -> Draw("p");
+    inclTrig[ptbin][2]  -> Draw("same p");
+    compLeg->Draw("same");
+    lbl[ptbin]->Draw("same");
+    usComp->cd(ptbin+1);
+    gPad->SetLogy(1);
+    usTrig[ptbin][0]    -> Draw("p");
+    usTrig[ptbin][2]    -> Draw("same p");
+    compLeg->Draw("same");
+    lbl[ptbin]->Draw("same");
+    lsComp->cd(ptbin+1);
+    gPad->SetLogy(1);
+    lsTrig[ptbin][0]    -> Draw("p");
+    lsTrig[ptbin][2]    -> Draw("same p");
+    compLeg->Draw("same");
+    lbl[ptbin]->Draw("same");
+    hadComp->cd(ptbin+1);
+    gPad->SetLogy(1);
+    hadTrig[ptbin][0]   -> Draw("p");
+    hadTrig[ptbin][2]   -> Draw("same p");
+    compLeg->Draw("same");
+    lbl[ptbin]->Draw("same");
+    npeComp->cd(ptbin+1);
+    gPad->SetLogy(1);
+    npeTrig[ptbin][0]   -> Draw("p");
+    npeTrig[ptbin][2]   -> Draw("same p");
+    compLeg->Draw("same");
+    lbl[ptbin]->Draw("same");
+  }
   // Draw on "SinglePlot" canvas for saving single plots from grid
   TPad* pNew = (TPad*)result[2]->GetPad(4)->Clone();
   singlePlot->cd();
@@ -908,113 +1077,113 @@ void offline(const char* FileName="test")
 
   // Make PDF with output canvases
   if(makePDF)
-    {
-      //Set front page
-      TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
-      fp->cd();
-      TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
-      bLabel->SetFillColor(38);
-      bLabel->Draw();
-      TLatex tl;
-      tl.SetNDC();
-      tl.SetTextColor(kWhite);
-      tl.SetTextSize(0.033);
-      char tlName[100];
-      char tlName2[100];
-      
-      TString titlename = FileName;
-      int found = titlename.Last('/');
-      if(found >= 0){
-	titlename.Replace(0, found+1, "");
-      } 
-      sprintf(tlName, "RUN 12 pp 200 GeV NPE-h    #Delta#phi Analysis");
-      tl.SetTextSize(0.05);
-      tl.SetTextColor(kWhite);
-      tl.DrawLatex(0.05, 0.92,tlName);
-      
-      TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
-      bFoot->SetFillColor(38);
-      bFoot->Draw();
-      tl.SetTextColor(kWhite);
-      tl.SetTextSize(0.05);
-      tl.DrawLatex(0.05, 0.05, (new TDatime())->AsString());
-      tl.SetTextColor(kBlack);
-      tl.SetTextSize(0.03);
-      tl.DrawLatex(0.1, 0.14, titlename);
-      sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
-      tl.DrawLatex(0.1, 0.8,tlName);
-      sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7;");
-      tl.DrawLatex(0.1, 0.75,tlName);
-      sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
-      tl.DrawLatex(0.1, 0.7,tlName);
-      sprintf(tlName,"hID: p_{T} > 0.5;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
-      tl.DrawLatex(0.1, 0.6,tlName);
-      sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;");
-      tl.DrawLatex(0.1, 0.5,tlName);
-       sprintf(tlName,"Triggers:  BHT0; BHT2;");
-      tl.DrawLatex(0.1, 0.4,tlName);
-      
-      
-      // Place canvases in order
-      TCanvas* temp = new TCanvas();
-      sprintf(name, "%s.pdf[", FileName);
-      temp->Print(name);
-      sprintf(name, "%s.pdf", FileName);
-      temp = fp; // print front page
-      temp->Print(name);
-      temp = mixedC;
-      temp->Print(name);
-      temp = mixedCbinEta;
-      temp->Print(name);
-      temp = mixedCbinPhi;
-      temp->Print(name);
-      temp = mixedCbin;
-      temp->Print(name);
-      for(Int_t ii=0; ii<numTrigs; ii++)
-	{
-	  if(!fPaintAll && (ii==1 || ii==3))
-	    continue;
-	  temp = IN[ii];
-	  temp->Print(name);
-	  temp = c[ii];
-	  temp->Print(name);
-	  temp = cHH[ii];
-	  temp->Print(name);
-	  temp = result[ii];
-	  temp->Print(name);
-	  temp = pile[ii];
-	  temp->Print(name);
-	  temp = pileTrig[ii];
-	  temp->Print(name);
-	  temp = pileHad[ii];
-	  temp->Print(name);
-	  /*temp = inMass[ii];
-	  temp->Print(name);
-	  temp = USComp[ii];
-	  temp->Print(name);
-	  temp = LSComp[ii];
-	  temp->Print(name);
-	  temp = InclComp[ii];
-	  temp->Print(name);
-	  temp = nSigPi[ii];
-	  temp->Print(name);*/
-	  temp = allDist[ii];
-	  temp->Print(name);
-	  
-	}
-      sprintf(name, "%s.pdf]", FileName);
-      temp->Print(name);
-    }
+  {
+    //Set front page
+    TCanvas* fp = new TCanvas("fp","Front Page",100,0,1000,900);
+    fp->cd();
+    TBox *bLabel = new TBox(0.01, 0.88, 0.99, 0.99);
+    bLabel->SetFillColor(38);
+    bLabel->Draw();
+    TLatex tl;
+    tl.SetNDC();
+    tl.SetTextColor(kWhite);
+    tl.SetTextSize(0.033);
+    char tlName[100];
+    char tlName2[100];
 
-   if(makeROOT)
+    TString titlename = FileName;
+    int found = titlename.Last('/');
+    if(found >= 0){
+      titlename.Replace(0, found+1, "");
+    } 
+    sprintf(tlName, "RUN 12 pp 200 GeV NPE-h    #Delta#phi Analysis");
+    tl.SetTextSize(0.05);
+    tl.SetTextColor(kWhite);
+    tl.DrawLatex(0.05, 0.92,tlName);
+
+    TBox *bFoot = new TBox(0.01, 0.01, 0.99, 0.12);
+    bFoot->SetFillColor(38);
+    bFoot->Draw();
+    tl.SetTextColor(kWhite);
+    tl.SetTextSize(0.05);
+    tl.DrawLatex(0.05, 0.05, (new TDatime())->AsString());
+    tl.SetTextColor(kBlack);
+    tl.SetTextSize(0.03);
+    tl.DrawLatex(0.1, 0.14, titlename);
+    sprintf(tlName,"eID: -1 < n  #sigma_{e TPC} < 3;  #left|gDCA #right| < 1 cm; 0.3 < p/E < 1.5;");
+    tl.DrawLatex(0.1, 0.8,tlName);
+    sprintf(tlName,"       nHitsFit > 20; nHits   #frac{dE}{dx} > 15; nHitFit/Max > 0.52;    #left|#eta#right| < 0.7;");
+    tl.DrawLatex(0.1, 0.75,tlName);
+    sprintf(tlName,"       n #phi > 1; n #eta > 1;  #left|dZ#right| < 3 cm;  #left|d#phi#right| < 0.015;");
+    tl.DrawLatex(0.1, 0.7,tlName);
+    sprintf(tlName,"hID: p_{T} > 0.5;  #left|#eta#right| < 1; nHitsFit > 15; nHits   #frac{dE}{dx} > 10; DCA < 1 cm;");
+    tl.DrawLatex(0.1, 0.6,tlName);
+    sprintf(tlName,"Event:  #left|V_{z}#right| < 35 cm;");
+    tl.DrawLatex(0.1, 0.5,tlName);
+    sprintf(tlName,"Triggers:  BHT0; BHT2;");
+    tl.DrawLatex(0.1, 0.4,tlName);
+
+
+    // Place canvases in order
+    TCanvas* temp = new TCanvas();
+    sprintf(name, "%s.pdf[", FileName);
+    temp->Print(name);
+    sprintf(name, "%s.pdf", FileName);
+    temp = fp; // print front page
+    temp->Print(name);
+    temp = mixedC;
+    temp->Print(name);
+    temp = mixedCbinEta;
+    temp->Print(name);
+    temp = mixedCbinPhi;
+    temp->Print(name);
+    temp = mixedCbin;
+    temp->Print(name);
+    for(Int_t ii=0; ii<numTrigs; ii++)
     {
-      file->Write();
-      file->Close();
+      if(!fPaintAll && (ii==1 || ii==3))
+        continue;
+      temp = IN[ii];
+      temp->Print(name);
+      temp = c[ii];
+      temp->Print(name);
+      temp = cHH[ii];
+      temp->Print(name);
+      temp = result[ii];
+      temp->Print(name);
+      temp = pile[ii];
+      temp->Print(name);
+      temp = pileTrig[ii];
+      temp->Print(name);
+      temp = pileHad[ii];
+      temp->Print(name);
+      /*temp = inMass[ii];
+        temp->Print(name);
+        temp = USComp[ii];
+        temp->Print(name);
+        temp = LSComp[ii];
+        temp->Print(name);
+        temp = InclComp[ii];
+        temp->Print(name);
+        temp = nSigPi[ii];
+        temp->Print(name);*/
+      temp = allDist[ii];
+      temp->Print(name);
+
     }
+    sprintf(name, "%s.pdf]", FileName);
+    temp->Print(name);
+  }
+
+  if(makeROOT)
+  {
+    file->Write();
+    file->Close();
+  }
 }
 
 Bool_t checkPaintAllTrigs(){
-  
+
   Bool_t cPaintAll = kFALSE;
   Int_t number = 2;
   while(number > 1 || number < 0){
@@ -1025,7 +1194,7 @@ Bool_t checkPaintAllTrigs(){
       std::istringstream stream( input );
       stream >> number;
       if(number == 1)
-	cPaintAll=kTRUE;
+        cPaintAll=kTRUE;
     }
     else
       number = 0;
@@ -1037,7 +1206,7 @@ Bool_t checkPaintAllTrigs(){
 
 void checkBatchMode(){
 
- // sets batch mode, so don't draw canvas
+  // sets batch mode, so don't draw canvas
   Int_t number = 2;
   while(number > 1 || number < 0){
     std::cout << "Batch Mode? [default: 1]: ";
@@ -1047,15 +1216,15 @@ void checkBatchMode(){
       std::istringstream stream( input );
       stream >> number;
       if(number == 0)
-	gROOT->SetBatch(kFALSE);
+        gROOT->SetBatch(kFALSE);
       if(number == 1)
-	gROOT->SetBatch(kTRUE);
+        gROOT->SetBatch(kTRUE);
     }
     else
-      {
-	number = 1;
-	gROOT->SetBatch(kTRUE);
-      }
+    {
+      number = 1;
+      gROOT->SetBatch(kTRUE);
+    }
   }
 }
 
@@ -1071,9 +1240,9 @@ Bool_t checkMakePDF(){
       std::istringstream stream( input );
       stream >> number;
       if(number == 0)
-	fmakePDF = kFALSE;
+        fmakePDF = kFALSE;
       if(number == 1)
-	fmakePDF = kTRUE;
+        fmakePDF = kTRUE;
     }
     else
       number = 1; 
@@ -1093,9 +1262,9 @@ Bool_t checkMakeRoot(){
       std::istringstream stream( input );
       stream >> number;
       if(number == 0)
-	fmakeROOT = kFALSE;
+        fmakeROOT = kFALSE;
       if(number == 1){
-	fmakeROOT = kTRUE;
+        fmakeROOT = kTRUE;
       }
     }
     else

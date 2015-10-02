@@ -992,9 +992,9 @@ void offline(const char* FileName="test")
       TF1* hadronFIT = hadronPU->GetFunction("pol1");
       cout <<"NPEtrig " << trig << " " << pu[0][ptbin][trig] <<" " << fitResult->GetParError(0) << " " << pu[1][ptbin][trig] <<" " << fitResult->GetParError(1) << endl;
       cout << "InclusiveTrig: " << trig <<" "<< inclusiveFIT->GetParameter(0) <<" "<< inclusiveFIT->GetParError(0)<< " " << inclusiveFIT->GetParameter(1) <<" "<<inclusiveFIT->GetParError(1)<< endl;
-      cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0) << " " << unlikeFIT->GetParameter(1) << endl;
-      cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParameter(1) << endl;
-      cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParameter(1) << endl;
+      cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0)  <<" "<< unlikeFIT->GetParError(0)<< " " << unlikeFIT->GetParameter(1) <<" "<<unlikeFIT->GetParError(1)<< endl;
+      cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParError(0)<<" "<< likeFIT->GetParameter(1) <<" "<<likeFIT->GetParError(1)<< endl;
+      cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParError(0)<<" "<< hadronFIT->GetParameter(1) <<" "<<hadronFIT->GetParError(1)<< endl;
 
     }
   }

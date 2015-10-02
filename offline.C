@@ -1023,7 +1023,7 @@ void offline(const char* FileName="test")
     npeTrig[ptbin][2]   -> SetLineColor(kRed);
     npeTrig[ptbin][2]   -> SetMarkerColor(kRed);
 
-    //reset range 
+    //reset ranges
     inclTrig[ptbin][0]->GetYaxis()->SetRange();
     usTrig[ptbin][0]->GetYaxis()->SetRange();
     lsTrig[ptbin][0]->GetYaxis()->SetRange();

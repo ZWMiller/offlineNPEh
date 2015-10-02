@@ -58,7 +58,7 @@ void offline(const char* FileName="test")
   Double_t epsilon[numPtBins] = {0.593164, 0.626663, 0.655916, 0.674654, 0.685596, 0.700600, 0.716682, 0.724638, 0.713977, 0.730550, 0.735204, 0.744336, 0.761323, 0.758423};
   Float_t hptMax=anaConst::hptMax; // Set max above range to allow overflow
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
-  Double_t pu[2][numPtBins][numTrigs]; // To store fit parameters for later use
+  Double_t pu[2]; // To store fit parameters for later use
   Double_t hhNorm, HHScale, hadPur;
 
   TH1D * LSIM[numPtBins][numTrigs];
@@ -384,10 +384,183 @@ void offline(const char* FileName="test")
     nSigPi[trig]   -> Divide(4,3);
     allDist[trig]  -> Divide(4,3);
 
+
+    // Pileup Calculation (using just the hPtCut in the anaConst.h), Done here since need fit results in deltaPhi
+    mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
+    mh3nTracksZdcxUS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxUS_%i_%i",trig,0)); // These histos are (epT,hpT,ZDCx), get nHadrons vs ZDCx
+    mh3nTracksZdcxLS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxLS_%i_%i",trig,0));
+    mh3nTracksZdcxHad[trig] = (TH3F*)f->Get(Form("mh3nTracksZdcxHad_%i_%i",trig,0));
+    mh3nTracksZdcx[trig]->Sumw2(); mh3nTracksZdcxUS[trig]->Sumw2(); mh3nTracksZdcxLS[trig]->Sumw2();  mh3nTracksZdcxHad[trig]->Sumw2();
+
+    mh2PtEZdcx[trig]       = (TH2F*)f->Get(Form("mh2PtEZdcx_%i",trig));            // Filled (epT,ZDCx). Get nTrigs vs ZDCx
+    mh2PtEZdcxUS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxUS_%i",trig));
+    mh2PtEZdcxLS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxLS_%i",trig));
+    mh2PtEZdcxHad[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxHad_%i",trig));
+    mh2PtEZdcx[trig]->Sumw2(); mh2PtEZdcxUS[trig]->Sumw2(); mh2PtEZdcxLS[trig]->Sumw2(); mh2PtEZdcxHad[trig]->Sumw2();
+
+    Double_t pulowpt[4]  = {2.5,4,6,8};
+    Double_t puhighpt[4] = {20,6,8,20};
+    if(trig == 0){pulowpt[0]=2.5; puhighpt[0]=10.5;}
+    if(trig == 2){pulowpt[0]=4.5; puhighpt[0]=10.5;}
+    for(Int_t ptbin=0; ptbin<1; ptbin++)// cut in to trigger pt slices
+    {
+      projZDCxHad[ptbin][trig] = mh3nTracksZdcx[trig]->ProjectionZ(Form("projZDCxHad_%i_%i",ptbin,trig),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadUS[ptbin][trig] = mh3nTracksZdcxUS[trig]->ProjectionZ(Form("projZDCxHadUS_%i_%i",ptbin,trig),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadLS[ptbin][trig] = mh3nTracksZdcxLS[trig]->ProjectionZ(Form("projZDCxHadLS_%i_%i",ptbin,trig),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptMax));
+      projZDCxHadHad[ptbin][trig] = mh3nTracksZdcxHad[trig]->ProjectionZ(Form("projZDCxHadHad_%i_%i",ptbin,trig),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptMax));
+
+      projZDCxTrig[ptbin][trig] = mh2PtEZdcx[trig]->ProjectionY(Form("projZDCxTrig_%i_%i",ptbin,trig),mh2PtEZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigUS[ptbin][trig] = mh2PtEZdcxUS[trig]->ProjectionY(Form("projZDCxTrigUS_%i_%i",ptbin,trig),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigLS[ptbin][trig] = mh2PtEZdcxLS[trig]->ProjectionY(Form("projZDCxTrigLS_%i_%i",ptbin,trig),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+      projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
+
+      // Rebin to make the statistics better
+      Int_t RBpu = 5;
+      projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
+      projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
+      projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
+      projZDCxHadHad[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrig[ptbin][trig]    -> Rebin(RBpu);
+      projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
+      projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
+
+      pulbl[ptbin] = new TPaveText(.15,.15,.35,.23,Form("NB NDC%i",ptbin));
+      sprintf(textLabel,"%.1f < P_{T,e} < %.1f",pulowpt[ptbin],puhighpt[ptbin]);
+      pulbl[ptbin]->AddText(textLabel);
+      pulbl[ptbin]->SetFillColor(kWhite);
+
+      // Make plots for each subset
+      inclusivePU = (TH1F*)projZDCxHad[ptbin][trig]->Clone(); inclusivePU->Divide(projZDCxTrig[ptbin][trig]);
+      inclusivePU->SetName(Form("inclusivePU_%i",trig));
+      unlikePU = (TH1F*)projZDCxHadUS[ptbin][trig]->Clone(); unlikePU->Divide(projZDCxTrigUS[ptbin][trig]);
+      unlikePU->SetName(Form("unlikePU_%i",trig));
+      likePU = (TH1F*)projZDCxHadLS[ptbin][trig]->Clone(); likePU->Divide(projZDCxTrigLS[ptbin][trig]);
+      likePU->SetName(Form("likePU_%i",trig));
+      hadronPU = (TH1F*)projZDCxHadHad[ptbin][trig]->Clone(); hadronPU->Divide(projZDCxTrigHad[ptbin][trig]);
+      hadronPU->SetName(Form("hadronPU_%i",trig));
+      inclusivePU->SetLineColor(kMagenta);
+      unlikePU->SetLineColor(kRed);
+      likePU->SetLineColor(kBlue);
+      hadronPU->SetLineColor(kGreen+3);
+      inclusivePU->SetMarkerColor(kMagenta);
+      unlikePU->SetMarkerColor(kRed);
+      likePU->SetMarkerColor(kBlue);
+      hadronPU->SetMarkerColor(kGreen+3);
+      inclusivePU->SetMarkerStyle(20);
+      unlikePU->SetMarkerStyle(21);
+      likePU->SetMarkerStyle(22);
+      hadronPU->SetMarkerStyle(23);	
+
+      // Draw
+      pileHad[trig]->cd();
+      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxHadUS[ptbin][trig]->SetLineColor(kRed);
+      projZDCxHadLS[ptbin][trig]->SetLineColor(kBlue);
+      projZDCxHadHad[ptbin][trig]->SetLineColor(kGreen+3);
+      projZDCxTrig[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxTrigUS[ptbin][trig]->SetLineColor(kRed);
+      projZDCxTrigLS[ptbin][trig]->SetLineColor(kBlue);
+      projZDCxTrigHad[ptbin][trig]->SetLineColor(kGreen+3);
+      TLegend* legPU = new TLegend(0.45,0.6,0.85,0.79);
+      legPU->AddEntry(projZDCxHad[ptbin][trig],"Semi-Inclusive Trigs","lpe");
+      legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
+      legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
+      legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
+      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("nHadrons");
+      projZDCxHad[ptbin][trig] -> DrawCopy();
+      projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
+      projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
+      projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
+      legPU->Draw("same");
+      pileTrig[trig]->cd();
+      projZDCxTrig[ptbin][trig]->GetXaxis()->SetTitle("nTriggers");
+      projZDCxTrig[ptbin][trig] -> DrawCopy();
+      projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
+      projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");
+      projZDCxTrigHad[ptbin][trig] -> DrawCopy("same");
+      legPU->Draw("same");
+      pulbl[ptbin]->Draw("same");
+
+      // Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
+      projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
+      projZDCxHadLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
+      projZDCxHadHad[ptbin][trig]-> Scale(HHScale*hadPur);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadUS[ptbin][trig], -1.);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadLS[ptbin][trig], 1.);
+      projZDCxHad[ptbin][trig] -> Add(projZDCxHadHad[ptbin][trig], -1.);
+
+      // Get Total number of trigs in pileup (first scale each distribution by efficiency, just like data)
+      projZDCxTrigUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
+      projZDCxTrigLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
+      projZDCxTrigHad[ptbin][trig]-> Scale(HHScale*hadPur);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigUS[ptbin][trig], -1.);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigLS[ptbin][trig], 1.);
+      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigHad[ptbin][trig], -1.);
+
+      // Actually do the division of total hadrons/total trigs
+      projZDCxHad[ptbin][trig]->Divide(projZDCxTrig[ptbin][trig]);
+
+      // plot projections
+      pile[trig]->cd();
+      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
+      projZDCxHad[ptbin][trig]->SetMarkerStyle(25);
+      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,15);
+      // 
+      gStyle->SetOptFit(1111);
+      projZDCxHad[ptbin][trig]->Fit("pol1","Q");
+      projZDCxHad[ptbin][trig]->GetFunction("pol1")->SetLineColor(kBlack);
+      TPaveStats *st = ((TPaveStats*)(projZDCxHad[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
+      if (st) {
+        st->SetTextColor(projZDCxHad[ptbin][trig]->GetFunction("pol1")->GetLineColor());
+        st->SetX1NDC(0.64); st->SetX2NDC(0.99);
+        st->SetY1NDC(0.4); st->SetY2NDC(0.6);
+      }
+      pile[trig]->Modified();pile[trig]->Update();
+      projZDCxHad[ptbin][trig]->Draw("");
+      pulbl[ptbin]->Draw("same");
+
+      // Draw for each Dist
+      inclusivePU ->Draw("same");
+      unlikePU    ->Draw("same");
+      likePU      ->Draw("same");
+      hadronPU    ->Draw("same");
+
+      TLegend* pileupLeg = new TLegend(0.2,0.73,0.55,0.85);
+      pileupLeg->AddEntry(projZDCxHad[ptbin][trig],"NPE","lpe");
+      pileupLeg->AddEntry(inclusivePU,"Semi-Inclusive","lpe");
+      pileupLeg->AddEntry(unlikePU,"Unlike Sign","lpe");
+      pileupLeg->AddEntry(likePU,"Like Sign","lpe");
+      pileupLeg->AddEntry(hadronPU,"Hadron","lpe");
+      pileupLeg->Draw("same");
+
+      // Get Fit information and store to use in corrections
+      TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
+      pu[0] = fitResult->GetParameter(0);
+      pu[1] = fitResult->GetParameter(1);
+      inclusivePU->Fit("pol1","Q");
+      TF1* inclusiveFIT = inclusivePU->GetFunction("pol1");
+      unlikePU->Fit("pol1","Q");
+      TF1* unlikeFIT = unlikePU->GetFunction("pol1");
+      likePU->Fit("pol1","Q");
+      TF1* likeFIT = likePU->GetFunction("pol1");
+      hadronPU->Fit("pol1","Q");
+      TF1* hadronFIT = hadronPU->GetFunction("pol1");
+      inclusiveFIT->SetLineColor(kMagenta);
+      unlikeFIT->SetLineColor(kRed);
+      likeFIT->SetLineColor(kBlue);
+      hadronFIT->SetLineColor(kGreen+3);
+      cout <<"NPEtrig " << trig << " " << pu[0] <<" " << fitResult->GetParError(0) << " " << pu[1] <<" " << fitResult->GetParError(1) << endl;
+      cout << "InclusiveTrig: " << trig <<" "<< inclusiveFIT->GetParameter(0) <<" "<< inclusiveFIT->GetParError(0)<< " " << inclusiveFIT->GetParameter(1) <<" "<<inclusiveFIT->GetParError(1)<< endl;
+      cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0)  <<" "<< unlikeFIT->GetParError(0)<< " " << unlikeFIT->GetParameter(1) <<" "<<unlikeFIT->GetParError(1)<< endl;
+      cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParError(0)<<" "<< likeFIT->GetParameter(1) <<" "<<likeFIT->GetParError(1)<< endl;
+      cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParError(0)<<" "<< hadronFIT->GetParameter(1) <<" "<<hadronFIT->GetParError(1)<< endl;
+
+    }
+
     // Make Projections (first get 2d/3d hists, then project)
-    //mh2PhiQPt[trig]         = (TH2F*)f->Get(Form("mh2PhiQPt_%i",trig));
-    //mh2nSigmaEPt[trig]      = (TH2F*)f->Get(Form("mh2nSigmaEPt_%i",trig));
-    //mh2nSigmaEPt_eID[trig]  = (TH2F*)f->Get(Form("mh2nSigmaEPt_eID_%i",trig));
     mh3DelPhiIncl[trig]     = (TH3F*)f->Get(Form("mh3DelPhiIncl_%i",trig));
     mh3DelPhiPhotLS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotLS_%i",trig));
     mh3DelPhiPhotUS[trig]   = (TH3F*)f->Get(Form("mh3DelPhiPhotUS_%i",trig));
@@ -404,15 +577,10 @@ void offline(const char* FileName="test")
     mh1PtETracks[trig]      = (TH1F*)f->Get(Form("mh1PtETracks_%i",trig));
     mh2nSigmaPion[trig]     = (TH2F*)f->Get(Form("mh2nSigmaPionPt_%i",trig));
 
+
     for(Int_t ptbin=0; ptbin<numPtBins; ptbin++)
     {
       // - Make projections into electron ptbins
-      //projHPhi[ptbin][trig] = mh2PhiQPt[trig]->ProjectionX(Form("projHPhi_%i_%i",ptbin,trig),mh2PhiQPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2PhiQPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-
-      //projnSigmaE[ptbin][trig] = mh2nSigmaEPt[trig]->ProjectionX(Form("projnSigmaE_%i_%i",ptbin,trig),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-
-      //projnSigmaE_eID[ptbin][trig] = mh2nSigmaEPt_eID[trig]->ProjectionX(Form("projnSigmaE_eID_%i_%i",ptbin,trig),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaEPt_eID[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
-
       projDelPhiIncl[ptbin][trig] = mh3DelPhiIncl[trig]->ProjectionX(Form("projDelPhiIncl_%i_%i",ptbin,trig),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiIncl[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiIncl[trig]->GetZaxis()->FindBin(hptMax));
 
       projDelPhiPhotUS[ptbin][trig] = mh3DelPhiPhotUS[trig]->ProjectionX(Form("projDelPhiPhotUS_%i_%i",ptbin,trig),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiPhotUS[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiPhotUS[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
@@ -479,7 +647,7 @@ void offline(const char* FileName="test")
       HHScale = (Float_t)inclNorm/(Float_t)hhNorm; // so the purity comparison is 1:1
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
       histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
-      if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
+      // DEBUG - if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
 
       Int_t counter = numPtBins*trig+ptbin;
       // DEBUG cout << counter << endl;
@@ -826,178 +994,8 @@ void offline(const char* FileName="test")
       npeTrig[ptbin][trig]   = (TH1F*)INCDP->Clone();
       npeTrig[ptbin][trig]   ->SetName(Form("npeTrig_%i",trig));
     }
-
-    // Pileup Calculation (using just the hPtCut in the anaConst.h)
-    mh3nTracksZdcx[trig]    = (TH3F*)f->Get(Form("mh3nTracksZdcx_%i_%i",trig,0));   // originally filled for various hpT cuts, use 0 which starts at hpt > 0.3
-    mh3nTracksZdcxUS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxUS_%i_%i",trig,0)); // These histos are (epT,hpT,ZDCx), get nHadrons vs ZDCx
-    mh3nTracksZdcxLS[trig]  = (TH3F*)f->Get(Form("mh3nTracksZdcxLS_%i_%i",trig,0));
-    mh3nTracksZdcxHad[trig] = (TH3F*)f->Get(Form("mh3nTracksZdcxHad_%i_%i",trig,0));
-    mh3nTracksZdcx[trig]->Sumw2(); mh3nTracksZdcxUS[trig]->Sumw2(); mh3nTracksZdcxLS[trig]->Sumw2();  mh3nTracksZdcxHad[trig]->Sumw2();
-
-    mh2PtEZdcx[trig]       = (TH2F*)f->Get(Form("mh2PtEZdcx_%i",trig));            // Filled (epT,ZDCx). Get nTrigs vs ZDCx
-    mh2PtEZdcxUS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxUS_%i",trig));
-    mh2PtEZdcxLS[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxLS_%i",trig));
-    mh2PtEZdcxHad[trig]     = (TH2F*)f->Get(Form("mh2PtEZdcxHad_%i",trig));
-    mh2PtEZdcx[trig]->Sumw2(); mh2PtEZdcxUS[trig]->Sumw2(); mh2PtEZdcxLS[trig]->Sumw2(); mh2PtEZdcxHad[trig]->Sumw2();
-
-    Double_t pulowpt[4]  = {2.5,4,6,8};
-    Double_t puhighpt[4] = {20,6,8,20};
-    if(trig == 0){pulowpt[0]=2.5; puhighpt[0]=10.5;}
-    if(trig == 2){pulowpt[0]=4.5; puhighpt[0]=10.5;}
-    for(Int_t ptbin=0; ptbin<1; ptbin++)// cut in to trigger pt slices
-    {
-      projZDCxHad[ptbin][trig] = mh3nTracksZdcx[trig]->ProjectionZ(Form("projZDCxHad_%i_%i",ptbin,trig),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcx[trig]->GetYaxis()->FindBin(hptMax));
-      projZDCxHadUS[ptbin][trig] = mh3nTracksZdcxUS[trig]->ProjectionZ(Form("projZDCxHadUS_%i_%i",ptbin,trig),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxUS[trig]->GetYaxis()->FindBin(hptMax));
-      projZDCxHadLS[ptbin][trig] = mh3nTracksZdcxLS[trig]->ProjectionZ(Form("projZDCxHadLS_%i_%i",ptbin,trig),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxLS[trig]->GetYaxis()->FindBin(hptMax));
-      projZDCxHadHad[ptbin][trig] = mh3nTracksZdcxHad[trig]->ProjectionZ(Form("projZDCxHadHad_%i_%i",ptbin,trig),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh3nTracksZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1,mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptCut),mh3nTracksZdcxHad[trig]->GetYaxis()->FindBin(hptMax));
-
-      projZDCxTrig[ptbin][trig] = mh2PtEZdcx[trig]->ProjectionY(Form("projZDCxTrig_%i_%i",ptbin,trig),mh2PtEZdcx[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcx[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
-      projZDCxTrigUS[ptbin][trig] = mh2PtEZdcxUS[trig]->ProjectionY(Form("projZDCxTrigUS_%i_%i",ptbin,trig),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxUS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
-      projZDCxTrigLS[ptbin][trig] = mh2PtEZdcxLS[trig]->ProjectionY(Form("projZDCxTrigLS_%i_%i",ptbin,trig),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxLS[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
-      projZDCxTrigHad[ptbin][trig] = mh2PtEZdcxHad[trig]->ProjectionY(Form("projZDCxTrigHad_%i_%i",ptbin,trig),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(pulowpt[ptbin]),mh2PtEZdcxHad[trig]->GetXaxis()->FindBin(puhighpt[ptbin])-1);
-
-      // Rebin to make the statistics better
-      Int_t RBpu = 5;
-      projZDCxHad[ptbin][trig]     -> Rebin(RBpu);
-      projZDCxHadUS[ptbin][trig]   -> Rebin(RBpu);
-      projZDCxHadLS[ptbin][trig]   -> Rebin(RBpu);
-      projZDCxHadHad[ptbin][trig]  -> Rebin(RBpu);
-      projZDCxTrig[ptbin][trig]    -> Rebin(RBpu);
-      projZDCxTrigUS[ptbin][trig]  -> Rebin(RBpu);
-      projZDCxTrigLS[ptbin][trig]  -> Rebin(RBpu);
-      projZDCxTrigHad[ptbin][trig] -> Rebin(RBpu);
-
-      pulbl[ptbin] = new TPaveText(.15,.15,.35,.23,Form("NB NDC%i",ptbin));
-      sprintf(textLabel,"%.1f < P_{T,e} < %.1f",pulowpt[ptbin],puhighpt[ptbin]);
-      pulbl[ptbin]->AddText(textLabel);
-      pulbl[ptbin]->SetFillColor(kWhite);
-
-      // Make plots for each subset
-      inclusivePU = (TH1F*)projZDCxHad[ptbin][trig]->Clone(); inclusivePU->Divide(projZDCxTrig[ptbin][trig]);
-      inclusivePU->SetName(Form("inclusivePU_%i",trig));
-      unlikePU = (TH1F*)projZDCxHadUS[ptbin][trig]->Clone(); unlikePU->Divide(projZDCxTrigUS[ptbin][trig]);
-      unlikePU->SetName(Form("unlikePU_%i",trig));
-      likePU = (TH1F*)projZDCxHadLS[ptbin][trig]->Clone(); likePU->Divide(projZDCxTrigLS[ptbin][trig]);
-      likePU->SetName(Form("likePU_%i",trig));
-      hadronPU = (TH1F*)projZDCxHadHad[ptbin][trig]->Clone(); hadronPU->Divide(projZDCxTrigHad[ptbin][trig]);
-      hadronPU->SetName(Form("hadronPU_%i",trig));
-      inclusivePU->SetLineColor(kMagenta);
-      unlikePU->SetLineColor(kRed);
-      likePU->SetLineColor(kBlue);
-      hadronPU->SetLineColor(kGreen+3);
-      inclusivePU->SetMarkerColor(kMagenta);
-      unlikePU->SetMarkerColor(kRed);
-      likePU->SetMarkerColor(kBlue);
-      hadronPU->SetMarkerColor(kGreen+3);
-      inclusivePU->SetMarkerStyle(20);
-      unlikePU->SetMarkerStyle(21);
-      likePU->SetMarkerStyle(22);
-      hadronPU->SetMarkerStyle(23);	
-
-      // Draw
-      pileHad[trig]->cd();
-      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
-      projZDCxHadUS[ptbin][trig]->SetLineColor(kRed);
-      projZDCxHadLS[ptbin][trig]->SetLineColor(kBlue);
-      projZDCxHadHad[ptbin][trig]->SetLineColor(kGreen+3);
-      projZDCxTrig[ptbin][trig]->SetLineColor(kBlack);
-      projZDCxTrigUS[ptbin][trig]->SetLineColor(kRed);
-      projZDCxTrigLS[ptbin][trig]->SetLineColor(kBlue);
-      projZDCxTrigHad[ptbin][trig]->SetLineColor(kGreen+3);
-      TLegend* legPU = new TLegend(0.45,0.6,0.85,0.79);
-      legPU->AddEntry(projZDCxHad[ptbin][trig],"Semi-Inclusive Trigs","lpe");
-      legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
-      legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
-      legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
-      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("nHadrons");
-      projZDCxHad[ptbin][trig] -> DrawCopy();
-      projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
-      projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
-      projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
-      legPU->Draw("same");
-      pileTrig[trig]->cd();
-      projZDCxTrig[ptbin][trig]->GetXaxis()->SetTitle("nTriggers");
-      projZDCxTrig[ptbin][trig] -> DrawCopy();
-      projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
-      projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");
-      projZDCxTrigHad[ptbin][trig] -> DrawCopy("same");
-      legPU->Draw("same");
-      pulbl[ptbin]->Draw("same");
-
-      // Get Total number of hadrons in pileup (first scale each distribution by efficiency, just like data)
-      projZDCxHadUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
-      projZDCxHadLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
-      projZDCxHadHad[ptbin][trig]-> Scale(HHScale*hadPur);
-      projZDCxHad[ptbin][trig] -> Add(projZDCxHadUS[ptbin][trig], -1.);
-      projZDCxHad[ptbin][trig] -> Add(projZDCxHadLS[ptbin][trig], 1.);
-      projZDCxHad[ptbin][trig] -> Add(projZDCxHadHad[ptbin][trig], -1.);
-
-      // Get Total number of trigs in pileup (first scale each distribution by efficiency, just like data)
-      projZDCxTrigUS[ptbin][trig] -> Scale(1./epsilon[ptbin] - 1.);
-      projZDCxTrigLS[ptbin][trig] -> Scale(1./epsilon[ptbin]);
-      projZDCxTrigHad[ptbin][trig]-> Scale(HHScale*hadPur);
-      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigUS[ptbin][trig], -1.);
-      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigLS[ptbin][trig], 1.);
-      projZDCxTrig[ptbin][trig] -> Add(projZDCxTrigHad[ptbin][trig], -1.);
-
-      // Actually do the division of total hadrons/total trigs
-      projZDCxHad[ptbin][trig]->Divide(projZDCxTrig[ptbin][trig]);
-
-      // plot projections
-      pile[trig]->cd();
-      projZDCxHad[ptbin][trig]->SetLineColor(kBlack);
-      projZDCxHad[ptbin][trig]->SetMarkerStyle(25);
-      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
-      projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
-      projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,20);
-      // 
-      gStyle->SetOptFit(1111);
-      projZDCxHad[ptbin][trig]->Fit("pol1","Q");
-      projZDCxHad[ptbin][trig]->GetFunction("pol1")->SetLineColor(kBlack);
-      TPaveStats *st = ((TPaveStats*)(projZDCxHad[ptbin][trig]->GetListOfFunctions()->FindObject("stats")));
-      if (st) {
-        st->SetTextColor(projZDCxHad[ptbin][trig]->GetFunction("pol1")->GetLineColor());
-        st->SetX1NDC(0.64); st->SetX2NDC(0.99);
-        st->SetY1NDC(0.4); st->SetY2NDC(0.6);
-      }
-      pile[trig]->Modified();pile[trig]->Update();
-      projZDCxHad[ptbin][trig]->Draw("");
-      pulbl[ptbin]->Draw("same");
-
-      // Draw for each Dist
-      inclusivePU ->Draw("same");
-      unlikePU    ->Draw("same");
-      likePU      ->Draw("same");
-      hadronPU    ->Draw("same");
-
-      TLegend* pileupLeg = new TLegend(0.2,0.73,0.55,0.85);
-      pileupLeg->AddEntry(projZDCxHad[ptbin][trig],"NPE","lpe");
-      pileupLeg->AddEntry(inclusivePU,"Semi-Inclusive","lpe");
-      pileupLeg->AddEntry(unlikePU,"Unlike Sign","lpe");
-      pileupLeg->AddEntry(likePU,"Like Sign","lpe");
-      pileupLeg->AddEntry(hadronPU,"Hadron","lpe");
-      pileupLeg->Draw("same");
-
-      // Get Fit information and store to use in corrections
-      TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
-      pu[0][ptbin][trig] = fitResult->GetParameter(0);
-      pu[1][ptbin][trig] = fitResult->GetParameter(1);
-      inclusivePU->Fit("pol1","Q");
-      TF1* inclusiveFIT = inclusivePU->GetFunction("pol1");
-      unlikePU->Fit("pol1","Q");
-      TF1* unlikeFIT = unlikePU->GetFunction("pol1");
-      likePU->Fit("pol1","Q");
-      TF1* likeFIT = likePU->GetFunction("pol1");
-      hadronPU->Fit("pol1","Q");
-      TF1* hadronFIT = hadronPU->GetFunction("pol1");
-      cout <<"NPEtrig " << trig << " " << pu[0][ptbin][trig] <<" " << fitResult->GetParError(0) << " " << pu[1][ptbin][trig] <<" " << fitResult->GetParError(1) << endl;
-      cout << "InclusiveTrig: " << trig <<" "<< inclusiveFIT->GetParameter(0) <<" "<< inclusiveFIT->GetParError(0)<< " " << inclusiveFIT->GetParameter(1) <<" "<<inclusiveFIT->GetParError(1)<< endl;
-      cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0)  <<" "<< unlikeFIT->GetParError(0)<< " " << unlikeFIT->GetParameter(1) <<" "<<unlikeFIT->GetParError(1)<< endl;
-      cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParError(0)<<" "<< likeFIT->GetParameter(1) <<" "<<likeFIT->GetParError(1)<< endl;
-      cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParError(0)<<" "<< hadronFIT->GetParameter(1) <<" "<<hadronFIT->GetParError(1)<< endl;
-
-    }
   }
+
 
   // Plot all of the distributions for each trigger
   for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++)
@@ -1037,7 +1035,7 @@ void offline(const char* FileName="test")
     sprintf(textLabel,"%.1f < P_{T,e} < %.1f",lowpt[ptbin],highpt[ptbin]);
     lbl[ptbin]->AddText(textLabel);
     lbl[ptbin]->SetFillColor(kWhite);
-    
+
     inclComp->cd(ptbin+1);
     gPad->SetLogy(1);
     inclTrig[ptbin][0]  -> Draw("p");
@@ -1131,13 +1129,23 @@ void offline(const char* FileName="test")
     sprintf(name, "%s.pdf", FileName);
     temp = fp; // print front page
     temp->Print(name);
-    temp = mixedC;
+    /*temp = mixedC;
     temp->Print(name);
     temp = mixedCbinEta;
     temp->Print(name);
     temp = mixedCbinPhi;
     temp->Print(name);
     temp = mixedCbin;
+    temp->Print(name);*/
+    temp = inclComp;
+    temp->Print(name);
+    temp = usComp;
+    temp->Print(name);
+    temp = lsComp;
+    temp->Print(name);
+    temp = hadComp;
+    temp->Print(name);
+    temp = npeComp;
     temp->Print(name);
     for(Int_t ii=0; ii<numTrigs; ii++)
     {

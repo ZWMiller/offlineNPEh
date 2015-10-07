@@ -138,6 +138,7 @@ void offline(const char* FileName="test")
   TH1D* projZDCxTrigLS[numPtBins][numTrigs];
   TH1D* projZDCxHadHad[numPtBins][numTrigs];
   TH1D* projZDCxTrigHad[numPtBins][numTrigs];
+  TH1D* pileTrigs[numPtBins][numTrigs];
   // 1D 2.5-3.5 GeV Check
   TH1F* mh1delPhiIncl;
   TH1F* mh1delPhiUS;
@@ -552,11 +553,14 @@ void offline(const char* FileName="test")
       unlikeFIT->SetLineColor(kRed);
       likeFIT->SetLineColor(kBlue);
       hadronFIT->SetLineColor(kGreen+3);
-      cout <<"NPEtrig " << trig << " " << pu[0][ptbin][trig] <<" " << fitResult->GetParError(0) << " " << pu[1][ptbin][trig] <<" " << fitResult->GetParError(1) << endl;
+
+      // For making table of fit errors
+     /* cout <<"NPEtrig " << trig << " " << pu[0] <<" " << fitResult->GetParError(0) << " " << pu[1] <<" " << fitResult->GetParError(1) << endl;
       cout << "InclusiveTrig: " << trig <<" "<< inclusiveFIT->GetParameter(0) <<" "<< inclusiveFIT->GetParError(0)<< " " << inclusiveFIT->GetParameter(1) <<" "<<inclusiveFIT->GetParError(1)<< endl;
       cout << "unlikeTrig: " << trig <<" "<< unlikeFIT->GetParameter(0)  <<" "<< unlikeFIT->GetParError(0)<< " " << unlikeFIT->GetParameter(1) <<" "<<unlikeFIT->GetParError(1)<< endl;
       cout << "likeTrig: " << trig <<" "<< likeFIT->GetParameter(0) << " " << likeFIT->GetParError(0)<<" "<< likeFIT->GetParameter(1) <<" "<<likeFIT->GetParError(1)<< endl;
       cout << "hadronTrig: " << trig <<" "<< hadronFIT->GetParameter(0) << " " << hadronFIT->GetParError(0)<<" "<< hadronFIT->GetParameter(1) <<" "<<hadronFIT->GetParError(1)<< endl;
+*/
 
     }
 
@@ -610,6 +614,10 @@ void offline(const char* FileName="test")
       projDelPhiHadHad[ptbin][trig] = mh3DelPhiHadHad[trig]->ProjectionX(Form("projDelPhiHadHad_%i_%i",ptbin,trig),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh3DelPhiHadHad[trig]->GetYaxis()->FindBin(highpt[ptbin])-1,mh3DelPhiHadHad[trig]->GetZaxis()->FindBin(hptCut),mh3DelPhiInclNP[trig]->GetZaxis()->FindBin(hptMax));
 
       projnSigmaPion[ptbin][trig] = mh2nSigmaPion[trig]->ProjectionX(Form("projnSigmaPion_%i_%i",ptbin,trig),mh2nSigmaPion[trig]->GetYaxis()->FindBin(lowpt[ptbin]),mh2nSigmaPion[trig]->GetYaxis()->FindBin(highpt[ptbin])-1);
+
+      //for pileup correction (need nTrigs per ZDC per ptbin)
+      pileTrigs[ptbin][trig] = mh2PtEZdcx[trig]->ProjectionY(Form("projZDCxTrig_%i_%i",ptbin,trig),mh2PtEZdcx[trig]->GetXaxis()->FindBin(lowpt[ptbin]),mh2PtEZdcx[trig]->GetXaxis()->FindBin(highpt[ptbin])-1);
+      pileTrigs[ptbin][trig]->SetName(Form("pileTrigs_%i_%i",ptbin,trig));
     }
 
     for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++){
@@ -634,7 +642,7 @@ void offline(const char* FileName="test")
 
       // Make stats label with purity and effeciency
       char statLabel[100];
-      stat[ptbin] = new TPaveText(.4,.3,.85,.35,Form("NB NDC%i",ptbin));
+      stat[ptbin] = new TPaveText(.5,.7,.85,.87,Form("NB NDC%i",ptbin));
       sprintf(statLabel,"Eff: %.2f; ePure:%.2f",epsilon[ptbin],purity);
       stat[ptbin]->InsertText(statLabel);
       stat[ptbin]->SetFillColor(kWhite);
@@ -649,8 +657,22 @@ void offline(const char* FileName="test")
       histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
       // DEBUG - if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
 
-      Int_t counter = numPtBins*trig+ptbin;
-      // DEBUG cout << counter << endl;
+      // Calculate pileup for this ptbin
+      Double_t pileCorrect,pileNumTrigs;
+      for(Int_t zdcBin=0; zdcBin < pileTrigs[ptbin][trig]->GetXaxis()->GetLast();zdcBin++)
+      {
+        Double_t c=0,n=0;
+        n = (Double_t)pileTrigs[ptbin][trig]->GetBinContent(zdcBin);        // Number of trigs in zdc
+        c = pu[1]*pileTrigs[ptbin][trig]->GetBinCenter(zdcBin);   // From fit: (p1*zdc+p0)-p0
+     //   cout << pileTrigs[ptbin][trig]->GetBinCenter(zdcBin) << " " << c << " " << n << endl;
+        pileCorrect += c*n;
+        pileNumTrigs += n;
+      }
+      Double_t dphiBins = (Double_t)projDelPhiIncl[ptbin][trig]->FindBin(3.1415) - (Double_t)projDelPhiIncl[ptbin][trig]->FindBin(-3.1414);
+      pileCorrect = pileCorrect/pileNumTrigs/dphiBins;  // divide weighted average by number of bins. 
+      cout << "pilecorrection: "<< dphiBins << " " << pileCorrect<< endl; // Subtract this value from every bin before scaling.
+
+      
       c[trig]->cd(ptbin+1);
       // Assign to a single, simpler name for manip
       LSIM[ptbin][trig]  = projDelPhiPhotLS[ptbin][trig];
@@ -947,7 +969,7 @@ void offline(const char* FileName="test")
       HADRON->Scale(1./hhNorm);
       INCLUSIVE->SetLineColor(7);
       LIKE->SetLineColor(kBlue);
-      INCLUSIVE->GetYaxis()->SetRangeUser(0.01,2);
+      INCLUSIVE->GetYaxis()->SetRangeUser(0.001,10);
       gPad->SetLogy(1);
       INCLUSIVE->GetXaxis()->SetRangeUser(lowPhi,highPhi);
       INCLUSIVE->SetMarkerStyle(20);
@@ -973,7 +995,7 @@ void offline(const char* FileName="test")
       INCDP->Draw("same");
       lbl[ptbin]->Draw("same");
       stat[ptbin]->Draw("same");
-      TLegend* legAll = new TLegend(0.45,0.11,0.85,0.3);
+      TLegend* legAll = new TLegend(0.11,0.7,0.59,0.89);
       legAll->AddEntry(INCLUSIVE,"Inclusive","lpe");
       legAll->AddEntry(UNLIKE,"Unlike Sign","lpe");
       legAll->AddEntry(LIKE,"Like Sign", "lpe");
@@ -1021,12 +1043,31 @@ void offline(const char* FileName="test")
     npeTrig[ptbin][2]   -> SetLineColor(kRed);
     npeTrig[ptbin][2]   -> SetMarkerColor(kRed);
 
+  if(ptbin == 0)
+  {
+    inclTrig[ptbin][0]->SetTitle("Inclusive Trigger DeltaPhi Comparison");
+    usTrig[ptbin][0]->SetTitle("Unlike Sign Trigger DeltaPhi Comparison");
+    lsTrig[ptbin][0]->SetTitle("Like Sign Trigger DeltaPhi Comparison");
+    hadTrig[ptbin][0]->SetTitle("Hadron-Hadron Trigger DeltaPhi Comparison");
+    npeTrig[ptbin][0]->SetTitle("NPE Trigger DeltaPhi Comparison");
+  }
+  else
+  {
+    inclTrig[ptbin][0]->SetTitle("");
+    usTrig[ptbin][0]->SetTitle("");
+    lsTrig[ptbin][0]->SetTitle("");
+    hadTrig[ptbin][0]->SetTitle("");
+    npeTrig[ptbin][0]->SetTitle("");
+  }
+
+
     //reset ranges
-    inclTrig[ptbin][0]->GetYaxis()->SetRange();
-    usTrig[ptbin][0]->GetYaxis()->SetRange();
-    lsTrig[ptbin][0]->GetYaxis()->SetRange();
-    hadTrig[ptbin][0]->GetYaxis()->SetRange();
-    npeTrig[ptbin][0]->GetYaxis()->SetRange();
+    inclTrig[ptbin][0]->GetYaxis()->SetRangeUser(.001,5);
+    usTrig[ptbin][0]->GetYaxis()->SetRangeUser(.001,5);
+    lsTrig[ptbin][0]->GetYaxis()->SetRangeUser(.001,5);
+    hadTrig[ptbin][0]->GetYaxis()->SetRangeUser(.001,5);
+    npeTrig[ptbin][0]->GetYaxis()->SetRangeUser(.001,5);
+    lsTrig[ptbin][0]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
 
     TLegend* compLeg = new TLegend(0.2,0.73,0.55,0.85);
     compLeg -> AddEntry(inclTrig[ptbin][0],"HT0","le");

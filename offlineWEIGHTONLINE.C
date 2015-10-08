@@ -103,7 +103,6 @@ void offline(const char* FileName="test")
   TH3F* mh3MixedDelPhi;
   TH3F* mh3MixedDelEta;
   TH3F* mh3MixedEtaPhi;
-  TH3F* mh3MixedEtaPhiWt;
   TH3F* mh3DelPhiHadHad[numTrigs];
   TH2F* mh2nSigmaPion[numTrigs];
   TH1F* mh1PtHadTracks[numTrigs];
@@ -126,16 +125,10 @@ void offline(const char* FileName="test")
   TH1D* projnSigmaPion[numPtBins][numTrigs];
   TH1D* projEMixedEtaPhi;
   TH1D* projPMixedEtaPhi;
-  TH1D* projPMixedEtaPhiWt;
-  TH1D* mixedDelPhi;
-  TH1D* mixedDelPhiWt;
-  TH1D* mixedEventCorrection;
   TH2D* proj2DMixedEtaPhi;
   TH2D* proj2DMixedEvent[numPtBins];
   TH1D* projMixedDelPhi[numPtBins];
   TH1D* projMixedDelEta[numPtBins];
-  TH1D* projMixedDelPhiWt[numPtBins];
-  TH1D* mixedEventDelPhiCorrect[numPtBins];
   TH2F* histoNorms;
   TH1D* projZDCxHad[numPtBins][numTrigs];
   TH1D* projZDCxTrig[numPtBins][numTrigs];
@@ -146,7 +139,6 @@ void offline(const char* FileName="test")
   TH1D* projZDCxHadHad[numPtBins][numTrigs];
   TH1D* projZDCxTrigHad[numPtBins][numTrigs];
   TH1D* pileTrigs[numPtBins][numTrigs];
-  TH1D* pileupCorrection[numPtBins][numTrigs];
   // 1D 2.5-3.5 GeV Check
   TH1F* mh1delPhiIncl;
   TH1F* mh1delPhiUS;
@@ -184,7 +176,6 @@ void offline(const char* FileName="test")
   TCanvas * mixedCbinEta;
   TCanvas * mixedCbinPhi;
   TCanvas * mixedCbin;
-  TCanvas * mixedEventEff;
   TCanvas * c2535;
   TCanvas * singlePlot;
   TCanvas * inclComp;
@@ -279,18 +270,14 @@ void offline(const char* FileName="test")
   mixedCbinEta = new TCanvas("mixedCbinEta","Mixed Events Eta",150,0,1150,1000);
   mixedCbinPhi = new TCanvas("mixedCbinPhi","Mixed Events Phi",150,0,1150,1000);
   mixedCbin = new TCanvas("mixedCbin","Mixed Events 2D",150,0,1150,1000);
-  mixedEventEff = new TCanvas("mixedEventEff","Mixed Event Efficiency Correct",150,0,1150,1000);
-
 
   mixedC       -> Divide(2,2);
   mixedCbinEta -> Divide(4,3);
   mixedCbinPhi -> Divide(4,3);
-  mixedEventEff -> Divide(4,3);
 
   mh3MixedDelPhi = (TH3F*)f->Get("mh3MixedDelPhi");
   mh3MixedDelEta = (TH3F*)f->Get("mh3MixedDelEta");
   mh3MixedEtaPhi = (TH3F*)f->Get("mh3MixedEtaPhi");
-  mh3MixedEtaPhiWt = (TH3F*)f->Get("mh3MixedEtaPhiWt");
 
   ///////////////////////////
   projPMixedEtaPhi  = mh3MixedEtaPhi -> ProjectionX("projPMixedEtaPhi");
@@ -300,13 +287,13 @@ void offline(const char* FileName="test")
   projEMixedEtaPhi->Rebin(RB2);
   projPMixedEtaPhi->Rebin(RB2);
 
-  /*mixedC->cd(1);
+  mixedC->cd(1);
   mh3MixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
-  //mh3MixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+  mh3MixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   mh3MixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
-  //mh3MixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
+  mh3MixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   mh3MixedEtaPhi->GetZaxis()->SetTitle("P_{t,e}");
-  mh3MixedEtaPhi->Draw();*/
+  mh3MixedEtaPhi->Draw();
   mixedC->cd(2);
   projPMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
@@ -325,21 +312,6 @@ void offline(const char* FileName="test")
   proj2DMixedEtaPhi->GetYaxis()->SetTitle("#Delta#eta");
   proj2DMixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   proj2DMixedEtaPhi->Draw("colz");
-  
-  mixedDelPhi = mh3MixedEtaPhi->ProjectionX("mixedDelPhi",0,-1,0,-1); // project all Mixed Event pt regions to delPhi
-  mixedDelPhiWt = mh3MixedEtaPhiWt->ProjectionX("mixedDelPhiWt",0,-1,0,-1); // project all Mixed Event pt regions to delPhi
-  mixedDelPhi->Sumw2();mixedDelPhiWt->Sumw2();
-  mixedDelPhi->Rebin(2);mixedDelPhiWt->Rebin(2);
-  mixedEventCorrection = (TH1D*)mixedDelPhi->Clone();
-  mixedEventCorrection->SetName("mixedEventCorrection");
-  mixedEventCorrection->Divide(mixedDelPhiWt);
-  mixedC->cd(1);
-  mixedEventCorrection->GetXaxis()->SetTitle("#Delta#phi");
-  mixedEventCorrection->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-  mixedEventCorrection->GetYaxis()->SetTitle("Efficiency");
-  mixedEventCorrection->GetYaxis()->SetRangeUser(0.2,1.4);
-  mixedEventCorrection->Draw("");
-
 
   TH3F* temp3D[numPtBins];
   // PtBins for Mixed Event
@@ -352,20 +324,7 @@ void offline(const char* FileName="test")
     lbl[ptbin]->SetFillColor(kWhite);
 
     projMixedDelPhi[ptbin] = mh3MixedEtaPhi->ProjectionX(Form("projMixedDelPhi_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin])-1);
-    projMixedDelPhiWt[ptbin] = mh3MixedEtaPhiWt->ProjectionX(Form("projMixedDelPhiWt_%i",ptbin),0,-1,mh3MixedEtaPhiWt->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhiWt->GetZaxis()->FindBin(highpt[ptbin])-1);
     projMixedDelEta[ptbin] = mh3MixedEtaPhi->ProjectionY(Form("projMixedDelEta_%i",ptbin),0,-1,mh3MixedEtaPhi->GetZaxis()->FindBin(lowpt[ptbin]),mh3MixedEtaPhi->GetZaxis()->FindBin(highpt[ptbin])-1);
-
-    projMixedDelPhi[ptbin]->Rebin(2);
-    projMixedDelPhiWt[ptbin]->Rebin(2);
-    mixedEventDelPhiCorrect[ptbin] = (TH1D*)projMixedDelPhi[ptbin]->Clone();
-    mixedEventDelPhiCorrect[ptbin]->SetName(Form("delPhiCorrection_%i",ptbin));
-    mixedEventDelPhiCorrect[ptbin] -> Divide(projMixedDelPhiWt[ptbin]); // This calculates the delta phi correction by doing unweighted/weighted
-
-    mixedEventEff->cd(ptbin+1);
-    mixedEventDelPhiCorrect[ptbin]->GetYaxis()->SetRangeUser(0,1);
-    mixedEventDelPhiCorrect[ptbin]->GetXaxis()->SetRangeUser(lowPhi,highPhi);
-    //mixedEventDelPhiCorrect[ptbin]->Rebin(2); // Rebin to use in delPhi division
-    mixedEventDelPhiCorrect[ptbin]->Draw();
 
     mixedCbinEta->cd(ptbin+1);
     projMixedDelEta[ptbin]->GetXaxis()->SetRangeUser(-2.5,2.5);
@@ -549,7 +508,7 @@ void offline(const char* FileName="test")
       projZDCxHad[ptbin][trig]->SetMarkerStyle(25);
       projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
       projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>/<nTrigs>");
-      projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,20);
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetRangeUser(0,15);
       // 
       gStyle->SetOptFit(1111);
       projZDCxHad[ptbin][trig]->Fit("pol1","Q");
@@ -699,27 +658,20 @@ void offline(const char* FileName="test")
       // DEBUG - if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
 
       // Calculate pileup for this ptbin
-      Double_t pileCorrect=0.,pileNumTrigs=0.;
+      Double_t pileCorrect,pileNumTrigs;
       for(Int_t zdcBin=0; zdcBin < pileTrigs[ptbin][trig]->GetXaxis()->GetLast();zdcBin++)
       {
         Double_t c=0,n=0;
         n = (Double_t)pileTrigs[ptbin][trig]->GetBinContent(zdcBin);        // Number of trigs in zdc
         c = pu[1]*pileTrigs[ptbin][trig]->GetBinCenter(zdcBin);   // From fit: (p1*zdc+p0)-p0
-        //cout << pileTrigs[ptbin][trig]->GetBinCenter(zdcBin) << " " << c << " " << n << endl;
+     //   cout << pileTrigs[ptbin][trig]->GetBinCenter(zdcBin) << " " << c << " " << n << endl;
         pileCorrect += c*n;
         pileNumTrigs += n;
       }
       Double_t dphiBins = (Double_t)projDelPhiIncl[ptbin][trig]->FindBin(3.1415) - (Double_t)projDelPhiIncl[ptbin][trig]->FindBin(-3.1414);
-    //  cout << "c*n: " << pileCorrect << " n: " << pileNumTrigs;
       pileCorrect = pileCorrect/pileNumTrigs/dphiBins;  // divide weighted average by number of bins. 
-      //cout << " pilecorrection: "<< pileCorrect<< endl; // Subtract this value from every bin before scaling.
-      
-      // Fill a histogram with the pileup correction in every bin
-      pileupCorrection[ptbin][trig] = (TH1D*)projDelPhiPhotLS[ptbin][trig]->Clone(); // Clone a delPhi hist to get proper binning
-      for(Int_t ii=0; ii < pileupCorrection[ptbin][trig]->GetXaxis()->GetLast();ii++)
-      {
-        pileupCorrection[ptbin][trig]->SetBinContent(ii,pileCorrect);
-      }
+      cout << "pilecorrection: "<< dphiBins << " " << pileCorrect<< endl; // Subtract this value from every bin before scaling.
+
       
       c[trig]->cd(ptbin+1);
       // Assign to a single, simpler name for manip
@@ -749,19 +701,6 @@ void offline(const char* FileName="test")
       USIM2[ptbin][trig] -> Rebin(RB);
       HHDP[ptbin][trig]  -> Rebin(RB);
       NSPI[ptbin][trig]  -> Rebin(10);
-
-      // Correct with Mixed Event  efficiency
-      LSIM[ptbin][trig]  -> Divide(mixedEventCorrection);
-      USIM[ptbin][trig]  -> Divide(mixedEventCorrection);
-      USIMNP[ptbin][trig]-> Divide(mixedEventCorrection);
-      LSIMNP[ptbin][trig]-> Divide(mixedEventCorrection);
-      INCLNP[ptbin][trig]-> Divide(mixedEventCorrection);
-      INCL[ptbin][trig]  -> Divide(mixedEventCorrection);
-      INCL2[ptbin][trig] -> Divide(mixedEventCorrection);
-      LSIM2[ptbin][trig] -> Divide(mixedEventCorrection);
-      USIM2[ptbin][trig] -> Divide(mixedEventCorrection);
-      HHDP[ptbin][trig]  -> Divide(mixedEventCorrection);
-
 
       // Actually manipulate histos and plot (photnic del Phi)
 
@@ -947,9 +886,9 @@ void offline(const char* FileName="test")
 
       // Subtraction of Inclusive - (1/e - 1)US + (1/e)LS - (1-purity)HadHad
       result[trig]->cd(ptbin+1);
-      TH1F *INCDP = (TH1F*)INCL[ptbin][trig]->Clone();
-      TH1F *ULDP  = (TH1F*)USIM[ptbin][trig]->Clone();
-      TH1F *LSDP  = (TH1F*)LSIM[ptbin][trig]->Clone();
+      TH1F *INCDP = (TH1F*)INCLNP[ptbin][trig]->Clone();
+      TH1F *ULDP  = (TH1F*)USIMNP[ptbin][trig]->Clone();
+      TH1F *LSDP  = (TH1F*)LSIMNP[ptbin][trig]->Clone();
       TH1F *HADDP = (TH1F*)HHDP[ptbin][trig]->Clone();
       INCDP->SetName(Form("scaleNPEhDelPhi_%i_%i",trig,ptbin));
       ULDP->Scale(1./epsilon[ptbin] - 1.); // Scale each distribution by associated factors
@@ -1231,11 +1170,9 @@ void offline(const char* FileName="test")
     sprintf(name, "%s.pdf", FileName);
     temp = fp; // print front page
     temp->Print(name);
-    temp = mixedEventEff;
+    /*temp = mixedC;
     temp->Print(name);
-    temp = mixedC;
-    temp->Print(name);
-    /*temp = mixedCbinEta;
+    temp = mixedCbinEta;
     temp->Print(name);
     temp = mixedCbinPhi;
     temp->Print(name);

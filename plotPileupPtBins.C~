@@ -1,0 +1,55 @@
+
+#include "anaConst.h"   
+const Int_t numPtBins = anaConst::nPtBins; 
+
+
+void plotPileup(){
+
+  Float_t lowpt[numPtBins],highpt[numPtBins];
+  for(Int_t c=0; c< numPtBins; c++)
+  {
+    lowpt[c] = anaConst::lpt[c];
+    highpt[c] = anaConst::hpt[c];
+  }
+  Float_t hptCut=anaConst::hptCut;
+  char name[100];
+  sprintf(name,"/Users/zach/Research/rootFiles/run12NPEhPhi/currentData.root");
+  TFile *fD = new TFile(name,"READ");
+  TH1D* PUC[numPtBins][4];
+  TCanvas* c = new TCanvas("c","Pileup Corrections",150,0,1150,1000);
+  TLegend* leg = new TLegend(0.45,0.6,0.85,0.79);
+  Int_t colorSelect0 = 0,colorSelect2 = 0;
+  for(Int_t trig = 0; trig < 3; trig+=2)
+  {
+    for(Int_t ptbin = 0; ptbin < numPtBins; ptbin++)
+    {
+      PUC[ptbin][trig] = (TH1D*)fD->Get(Form("pileupCorrection_%i_%i",ptbin,trig));
+
+      c->cd();
+      if(trig == 0)
+      {
+        PUC[ptbin][trig]->SetLineColor(kAzure+colorSelect0); // new color for each ptbin
+        colorSelect0++;
+      }
+      if(trig == 2)
+      { 
+        PUC[ptbin][trig]->SetLineColor(kSpring+colorSelect2);
+        colorSelect2++;
+      }
+      leg->AddEntry(PUC[ptbin][trig],Form("HT%i, %.1f < pT < %.1f",trig,lowpt[ptbin],highpt[ptbin]),"l");
+      if(ptbin == 0 && trig == 0)
+      {
+        PUC[ptbin][trig]->SetTitle("Pileup Correction pT Dependence");
+        PUC[ptbin][trig]->GetXaxis()->SetRangeUser(-3.5,3.5);
+        PUC[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi");
+        PUC[ptbin][trig]->GetYaxis()->SetRangeUser(0,0.1);
+        PUC[ptbin][trig]->GetYaxis()->SetTitle("#frac{1}{N} #frac{dN}{d(#Delta#phi})");
+        PUC[ptbin][trig]->Draw("hist");
+      }
+      else
+        PUC[ptbin][trig]->Draw("same hist");
+
+    }
+  }
+  leg->Draw("same");
+}

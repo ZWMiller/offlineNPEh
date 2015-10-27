@@ -59,6 +59,7 @@ void offline(const char* FileName="test")
   Float_t hptMax=anaConst::hptMax; // Set max above range to allow overflow
   Float_t lowPhi=anaConst::lowPhi, highPhi=anaConst::highPhi;
   Double_t pu[2]; // To store fit parameters for later use
+  Double_t puE[2]; // To store fit parameter errors for later use
   Double_t hhNorm, HHScale, hadPur;
 
   TH1D * LSIM[numPtBins][numTrigs];
@@ -578,10 +579,7 @@ void offline(const char* FileName="test")
       pileupLeg->AddEntry(hadronPU,"Hadron","lpe");
       pileupLeg->Draw("same");
 
-      // Get Fit information and store to use in corrections
       TF1 *fitResult = projZDCxHad[ptbin][trig]->GetFunction("pol1");
-      pu[0] = fitResult->GetParameter(0);
-      pu[1] = fitResult->GetParameter(1);
       inclusivePU->Fit("pol1","Q");
       TF1* inclusiveFIT = inclusivePU->GetFunction("pol1");
       unlikePU->Fit("pol1","Q");
@@ -594,6 +592,12 @@ void offline(const char* FileName="test")
       unlikeFIT->SetLineColor(kRed);
       likeFIT->SetLineColor(kBlue);
       hadronFIT->SetLineColor(kGreen+3);
+      // Get Fit information and store to use in corrections
+      pu[0] = hadronFIT->GetParameter(0);
+      pu[1] = hadronFIT->GetParameter(1);
+      puE[0] = hadronFIT->GetParError(0);
+      puE[1] = hadronFIT->GetParError(1);
+      cout << "pu1: " << pu[1] << " puE[1]: " << puE[1] << endl;
 
       // For making table of fit errors
      /* cout <<"NPEtrig " << trig << " " << pu[0] <<" " << fitResult->GetParError(0) << " " << pu[1] <<" " << fitResult->GetParError(1) << endl;
@@ -697,6 +701,8 @@ void offline(const char* FileName="test")
       Float_t Norm = (Float_t)inclNorm - (1/epsilon[ptbin] - 1.)*(Float_t)USNorm + (1/epsilon[ptbin])*(Float_t)LSNorm - HHScale*hadPur*hhNorm; // Use the number of "signal" counts
       histoNorms->SetBinContent(histoNorms->GetBin(trig+1,ptbin+1), Norm); // Find the bin and fill with the Normalization
       // DEBUG - if(trig==0 && ptbin==0) cout << trig << "; " << ptbin << ": " << Norm << " norm2535: " << norm2535 << endl;
+      //
+      cout << "HT" << trig << " " << lowpt[ptbin] << " < pT < " << highpt[ptbin] << " hhevents: " << hhNorm << endl;  
 
       // Calculate pileup for this ptbin
       Double_t pileCorrect=0.,pileNumTrigs=0.;
@@ -717,9 +723,11 @@ void offline(const char* FileName="test")
       // Fill a histogram with the pileup correction in every bin
       pileupCorrection[ptbin][trig] = (TH1D*)projDelPhiPhotLS[ptbin][trig]->Clone(); // Clone a delPhi hist to get proper binning
       pileupCorrection[ptbin][trig]->SetName(Form("pileupCorrection_%i_%i",ptbin,trig));
+      pileupCorrection[ptbin][trig]->Sumw2();
       for(Int_t ii=0; ii < pileupCorrection[ptbin][trig]->GetXaxis()->GetLast();ii++)
       {
         pileupCorrection[ptbin][trig]->SetBinContent(ii,pileCorrect);
+        pileupCorrection[ptbin][trig]->SetBinError(ii,pileCorrect*(puE[1]/pu[1])); // Assign percentage of fit error to pileup correction error
       }
       
       c[trig]->cd(ptbin+1);

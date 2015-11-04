@@ -43,11 +43,11 @@ void plotPileup(){
         PUC[ptbin][trig]->GetXaxis()->SetRangeUser(-3.5,3.5);
         PUC[ptbin][trig]->GetXaxis()->SetTitle("#Delta#phi");
         PUC[ptbin][trig]->GetYaxis()->SetRangeUser(0,0.1);
-        PUC[ptbin][trig]->GetYaxis()->SetTitle("#frac{1}{N} #frac{dN}{d(#Delta#phi})");
-        PUC[ptbin][trig]->Draw("hist");
+        PUC[ptbin][trig]->GetYaxis()->SetTitle("#frac{1}{N} #frac{dN}{d(#Delta#phi)}");
+        PUC[ptbin][trig]->Draw("p");
       }
       else
-        PUC[ptbin][trig]->Draw("same hist");
+        PUC[ptbin][trig]->Draw("same p");
 
     }
   }

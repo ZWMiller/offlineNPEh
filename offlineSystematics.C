@@ -62,6 +62,17 @@ void offline(const char* FileName="test")
   Double_t puE[2]; // To store fit parameter errors for later use
   Double_t hhNorm, HHScale, hadPur;
 
+  double effPar[3];
+  FILE* pFile;
+  pFile = fopen("effParFits.txt","r");
+  fscanf(pFile,"%lf %lf %lf",&effPar[0],&effPar[1],&effPar[2]);
+  fclose(pFile);  
+
+  double purPar[3];
+  pFile = fopen("purParFits.txt","r");
+  fscanf(pFile,"%lf %lf %lf",&purPar[0],&purPar[1],&purPar[2]);
+  fclose(pFile);  
+
   TH1D * LSIM[numPtBins][numTrigs];
   TH1D * USIM[numPtBins][numTrigs];
   TH1D * USIMNP[numPtBins][numTrigs];
@@ -676,14 +687,16 @@ void offline(const char* FileName="test")
       // Calculate electron purity from pol3 fit of xiaozhi data
       Float_t ptAv = (lowpt[ptbin]+highpt[ptbin])/2.;
       Float_t p[3] = {0.9743, 0.02128, -0.00438};
-      Float_t purity = p[0] + (p[1]*ptAv)+(p[2]*ptAv*ptAv);
-      hadPur = (1-purity)*1.05;
+      Float_t purity = purPar[0] + (purPar[1]*ptAv)+(purPar[2]*ptAv*ptAv);
+      hadPur = 1-purity;
 
       // Calculate PHe Reconstruction Eff from Xiaozhi embedding (fit)
-      Float_t par[5] = {.26214, 4.75137, .526075, .0276979, .00054599};
+      //Float_t par[5] = {.26214, 4.75137, .526075, .0276979, .00054599};
       Float_t x = ptAv;
-      Float_t eps = par[0]*TMath::Log(par[1]*x - par[2]*x*x + par[3]*x*x*x - par[4]*x*x*x*x);
-      epsilon[ptbin] = eps;
+      //Float_t eps = par[0]*TMath::Log(par[1]*x - par[2]*x*x + par[3]*x*x*x - par[4]*x*x*x*x);
+      Double_t recoEfficiency = effPar[0]*(1.0 -TMath::Exp(-(x+effPar[1])/effPar[2]));
+      epsilon[ptbin] = recoEfficiency; 
+      //epsilon[ptbin] = eps;
 
       // Make stats label with purity and effeciency
       char statLabel[100];

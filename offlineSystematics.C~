@@ -11,7 +11,7 @@ void checkBatchMode();
 Bool_t checkMakePDF();
 Bool_t checkMakeRoot();
 
-void offline(const char* FileName="test")
+void offline(const char* FileName="npe_tree_Oct12_1")
 {
   TH1F::SetDefaultSumw2();
   // Set Style parameters for this macro
@@ -66,6 +66,11 @@ void offline(const char* FileName="test")
   FILE* pFile;
   pFile = fopen("effParFits.txt","r");
   fscanf(pFile,"%lf %lf %lf",&effPar[0],&effPar[1],&effPar[2]);
+  fclose(pFile);  
+
+  double purPar[3];
+  pFile = fopen("purParFits.txt","r");
+  fscanf(pFile,"%lf %lf %lf",&purPar[0],&purPar[1],&purPar[2]);
   fclose(pFile);  
 
   TH1D * LSIM[numPtBins][numTrigs];
@@ -682,7 +687,7 @@ void offline(const char* FileName="test")
       // Calculate electron purity from pol3 fit of xiaozhi data
       Float_t ptAv = (lowpt[ptbin]+highpt[ptbin])/2.;
       Float_t p[3] = {0.9743, 0.02128, -0.00438};
-      Float_t purity = p[0] + (p[1]*ptAv)+(p[2]*ptAv*ptAv);
+      Float_t purity = purPar[0] + (purPar[1]*ptAv)+(purPar[2]*ptAv*ptAv);
       hadPur = 1-purity;
 
       // Calculate PHe Reconstruction Eff from Xiaozhi embedding (fit)

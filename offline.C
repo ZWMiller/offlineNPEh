@@ -314,7 +314,7 @@ void offline(const char* FileName="test")
   //mh3MixedEtaPhi->GetYaxis()->SetRangeUser(-1.5,1.5);
   mh3MixedEtaPhi->GetZaxis()->SetTitle("P_{t,e}");
   mh3MixedEtaPhi->Draw();*/
-  mixedC->cd(2);
+ /* mixedC->cd(2);
   projPMixedEtaPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
   projPMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
   projPMixedEtaPhi->GetYaxis()->SetRangeUser(0,20000);
@@ -324,7 +324,7 @@ void offline(const char* FileName="test")
   projEMixedEtaPhi->GetXaxis()->SetRangeUser(-2.5,2.5);
   projEMixedEtaPhi->GetXaxis()->SetTitle("#Delta#eta");
   projEMixedEtaPhi->SetTitle("Mixed Event #Delta#eta");
-  projEMixedEtaPhi->Draw();
+  projEMixedEtaPhi->Draw();*/
   mixedC->cd(4);
   mixedC->SetLogz(1);
   proj2DMixedEtaPhi->GetXaxis()->SetTitle("#Delta#phi");
@@ -346,6 +346,21 @@ void offline(const char* FileName="test")
   mixedEventCorrection->GetYaxis()->SetTitle("Efficiency");
   mixedEventCorrection->GetYaxis()->SetRangeUser(0.2,1.4);
   mixedEventCorrection->Draw("");
+  mixedC->cd(2);
+  mixedDelPhi->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+  mixedDelPhi->GetXaxis()->SetTitle("#Delta#phi");
+  mixedDelPhi->GetYaxis()->SetTitle("Counts");
+  mixedDelPhi->GetYaxis()->SetRangeUser(0,20000);
+  mixedDelPhi->SetTitle("Mixed Event #Delta#phi");
+  mixedDelPhi->Draw();
+  mixedC->cd(3);
+  mixedDelPhiWt->GetXaxis()->SetRangeUser(lowPhi,highPhi);
+  mixedDelPhiWt->GetXaxis()->SetTitle("#Delta#phi");
+  mixedDelPhiWt->GetYaxis()->SetTitle("Counts");
+  mixedDelPhiWt->GetYaxis()->SetRangeUser(0,20000);
+  mixedDelPhiWt->SetTitle("Mixed Event #Delta#phi");
+  mixedDelPhiWt->Draw();
+
 
 
   TH3F* temp3D[numPtBins];
@@ -516,14 +531,16 @@ void offline(const char* FileName="test")
       legPU->AddEntry(projZDCxHadUS[ptbin][trig],"Unlike Sign Trigs","lpe");
       legPU->AddEntry(projZDCxHadLS[ptbin][trig],"Like Sign Trigs","lpe");
       legPU->AddEntry(projZDCxHadHad[ptbin][trig],"Hadron-Hadron Trigs","lpe");
-      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("nHadrons");
+      projZDCxHad[ptbin][trig]->GetYaxis()->SetTitle("<nHadrons>");
+      projZDCxHad[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
       projZDCxHad[ptbin][trig] -> DrawCopy();
       projZDCxHadUS[ptbin][trig] -> DrawCopy("same");
       projZDCxHadLS[ptbin][trig] -> DrawCopy("same");
       projZDCxHadHad[ptbin][trig] -> DrawCopy("same");
       legPU->Draw("same");
       pileTrig[trig]->cd();
-      projZDCxTrig[ptbin][trig]->GetXaxis()->SetTitle("nTriggers");
+      projZDCxTrig[ptbin][trig]->GetYaxis()->SetTitle("<nTriggers>");
+      projZDCxTrig[ptbin][trig]->GetXaxis()->SetTitle("ZDCx");
       projZDCxTrig[ptbin][trig] -> DrawCopy();
       projZDCxTrigUS[ptbin][trig] -> DrawCopy("same");
       projZDCxTrigLS[ptbin][trig] -> DrawCopy("same");

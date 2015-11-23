@@ -11,7 +11,7 @@ void checkBatchMode();
 Bool_t checkMakePDF();
 Bool_t checkMakeRoot();
 
-void offline(const char* FileName="test")
+void offlineSystematics(const char* FileName="npe_tree_Oct12_1")
 {
   TH1F::SetDefaultSumw2();
   // Set Style parameters for this macro

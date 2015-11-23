@@ -14,7 +14,7 @@
   {
     double current = changeHist->GetBinContent(chn);
     double error = changeHist->GetBinError(chn);
-    //changeHist->SetBinContent(chn, current+error);
+    //changeHist->SetBinContent(chn, current-error);
   }
   changeHist->SetLineColor(kGreen);
   changeHist->SetMarkerColor(kGreen);
